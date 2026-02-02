@@ -1,0 +1,191 @@
+.inventory-form {
+  margin-top: 20px;
+  margin-bottom: 40px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+.addNew {
+  text-align: left;
+  padding-top: 50px;
+  font-size: 25px;
+  font-weight: 550;
+}
+
+/* GRID */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  padding: 15px;
+}
+
+/* FORM ITEM */
+.form_content {
+  display: flex;
+  flex-direction: column;
+}
+
+/* LABEL */
+.form_content label {
+  font-size: 14px;
+  margin-bottom: 6px;
+  font-weight: 500;
+  text-align: left;
+  margin-left: 5px;
+}
+.form_content {
+  margin-bottom: 7px;
+  margin-top: 7px;
+}
+
+/* INPUT & SELECT – UNIFORM */
+.form_content input,
+.form_content select {
+  width: 100%;
+  height: 42px;
+  padding: 0 12px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+/* FOCUS STATE */
+.form_content input:focus,
+.form_content select:focus {
+  border-color: #d91f29;
+}
+
+/* BUTTON */
+.submit-btn {
+  margin-top: 20px;
+  padding: 12px 20px;
+  border-radius: 6px;
+  margin-left: auto;
+  border: none;
+  background: #d91f29;
+  color: #fff;
+  cursor: pointer;
+}
+.submit-btn:hover {
+  background: #b81a22;
+}
+.inventoryList {
+  text-align: left;
+  padding-top: 20px;
+  font-size: 25px;
+  font-weight: 550;
+  margin-bottom: 10px;
+}
+.totalItems {
+  text-align: right;
+  padding-top: 5px;
+  font-size: 16px;
+  font-weight: 500;
+  color: #555;
+  margin-bottom: 15px;
+}
+.dcTable {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 8px; /* optional: space between rows for cleaner look */
+  font-family: Arial, sans-serif;
+  background-color: white;
+  border: 1px solid #e5e6ea;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+}
+.dcTable th {
+  text-align: left;
+  padding: 15px 15px;
+
+  padding-top: 30px;
+  padding-bottom: 30px;
+  background-color: #f9fbfa;
+  font-weight: 600;
+  color: #333;
+  border-bottom: 1px solid #e5e6ea;
+  /* white-space: nowrap; */
+}
+.dcTable tbody td {
+  padding: 12px 8px;
+  background-color: #ffffff;
+  border-bottom: 1px solid #e5e6ea;
+  /* white-space: nowrap; */
+}
+.dcTable tbody tr:last-child td {
+  border-bottom: none; /* optional: remove line after last row */
+}
+
+.editBtn {
+  color: black;
+  border: none;
+  margin-left: 5px;
+  padding: 6px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.editBtn:hover {
+  background-color: #e0e7ff;
+  color: #3730a3;
+}
+.deleteBtn {
+  color: black;
+  border: none;
+  margin-left: 5px;
+  padding: 6px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.deleteBtn:hover {
+  background-color: #fff3f2;
+  color: #f14b4e;
+}
+
+/* RESPONSIVE BREAKPOINTS */
+@media (max-width: 992px) {
+  .form-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 576px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 600px) {
+  .dcTable,
+  .dcTable thead,
+  .dcTable tbody,
+  .dcTable th,
+  .dcTable td,
+  .dcTable tr {
+    display: block;
+  }
+
+  .dcTable thead tr {
+    display: none; /* hide header */
+  }
+
+  .dcTable tbody tr {
+    margin-bottom: 16px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 12px;
+  }
+
+  .dcTable td {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 12px;
+    border: none;
+    border-bottom: 1px solid #eee;
+  }
+
+  .dcTable td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+}
