@@ -205,6 +205,8 @@ function Dc_Inventory() {
             >
               <option value="Active">Active</option>
               <option value="Inactive">Inactive</option>
+              <option value="ShutDown">Shut Down</option>
+              <option value="Decommissioned">Decommissioned</option>
             </select>
           </div>
 
