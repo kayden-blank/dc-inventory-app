@@ -5,7 +5,7 @@ import Navigation from "./Navigation.jsx";
 const Home = () => {
   return (
     <div>
-      <Navigation />
+      {/* <Navigation /> */}
       <Dc_Inventory />
       <br />
     </div>
