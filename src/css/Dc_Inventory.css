@@ -9,6 +9,7 @@
   margin-bottom: 40px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   text-align: right;
+  scroll-margin-top: 170px;
 }
 .addNew {
   text-align: left;
@@ -76,6 +77,18 @@
 }
 .submit-btn:hover {
   background: #b81a22;
+}
+.cancel-btn {
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  margin-top: 20px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.cancel-btn:hover {
+  background: #e5e7eb;
 }
 .inventoryList {
   text-align: left;

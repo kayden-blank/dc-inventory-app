@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "./assets/Supabase";
 import "./css/Dc_Inventory.css";
 
@@ -129,6 +129,27 @@ function Dc_Inventory() {
       uba_tag_number: item.uba_tag_number,
     });
     setEditingId(item.id);
+
+    formRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+
+    setFormData({
+      device_label: "",
+      model: "",
+      active: "Active",
+      rack_no: "",
+      new_rack_no: "",
+      server_owner_dept: "",
+      server_admin_name: "",
+      serial_number: "",
+      uba_tag_number: "",
+    });
   };
   //Filter items based on search
   const filteredItems = items.filter((item) => {
@@ -146,11 +167,12 @@ function Dc_Inventory() {
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = filteredItems.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
+  const formRef = useRef(null);
 
   return (
     <div className="wholeBody">
-      <p className="addNew">Add New Device</p>
-      <form onSubmit={handleSubmit} className="inventory-form">
+      <p className="addNew">{editingId ? "Edit Device" : "Add New Device"}</p>
+      <form ref={formRef} onSubmit={handleSubmit} className="inventory-form">
         <div className="form-grid">
           <div className="form_content">
             <label>Device / Label:</label>
@@ -248,9 +270,21 @@ function Dc_Inventory() {
           </div>
         </div>
 
-        <button type="submit" className="submit-btn">
-          {editingId ? "Update Device" : "Add Device"}
-        </button>
+        <div style={{ display: "flex", gap: "12px", marginTop: "16px" }}>
+          <button type="submit" className="submit-btn">
+            {editingId ? "Update Device" : "Add Device"}
+          </button>
+
+          {editingId && (
+            <button
+              type="button"
+              className="cancel-btn"
+              onClick={handleCancelEdit}
+            >
+              Cancel
+            </button>
+          )}
+        </div>
       </form>
 
       <p className="inventoryList">Inventory List</p>
