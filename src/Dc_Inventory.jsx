@@ -148,7 +148,7 @@ function Dc_Inventory() {
   const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
 
   return (
-    <div>
+    <div className="wholeBody">
       <p className="addNew">Add New Device</p>
       <form onSubmit={handleSubmit} className="inventory-form">
         <div className="form-grid">

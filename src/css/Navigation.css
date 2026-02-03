@@ -5,10 +5,8 @@
   z-index: 1000;
   background-color: #ffffff;
   border: 1px solid #e5e7eb;
-  width: 99.5vw;
+  width: 100%;
   margin-bottom: 24px;
-  margin-left: -6%;
-  margin-top: -4%;
 }
 
 /* Page width control */
