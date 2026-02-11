@@ -275,8 +275,16 @@ function Dc_Inventory() {
       );
     })
     .sort((a, b) => {
+      const rackA = parseInt(a.rack_no) || 0;
+      const rackB = parseInt(b.rack_no) || 0;
+
+      if (rackA !== rackB) {
+        return rackA - rackB;
+      }
+
       const labelA = (a.device_label || "").toLowerCase();
       const labelB = (b.device_label || "").toLowerCase();
+
       return labelA.localeCompare(labelB);
     });
   //Paginate filtered items
@@ -289,6 +297,41 @@ function Dc_Inventory() {
   useEffect(() => {
     setCurrentPage(1);
   }, [search]);
+
+  const getPaginationRange = (currentPage, totalPages) => {
+    const delta = 2; // how many pages to show around current
+    const range = [];
+    const rangeWithDots = [];
+
+    for (let i = 1; i <= totalPages; i++) {
+      if (
+        i === 1 ||
+        i === totalPages ||
+        (i >= currentPage - delta && i <= currentPage + delta)
+      ) {
+        range.push(i);
+      }
+    }
+
+    let lastPage;
+
+    for (let i of range) {
+      if (lastPage) {
+        if (i - lastPage === 2) {
+          rangeWithDots.push(lastPage + 1);
+        } else if (i - lastPage > 2) {
+          rangeWithDots.push("...");
+        }
+      }
+
+      rangeWithDots.push(i);
+      lastPage = i;
+    }
+
+    return rangeWithDots;
+  };
+  const paginationRange = getPaginationRange(currentPage, totalPages);
+
   return (
     <div className="wholeBody">
       <p className="addNew">{editingId ? "Edit Device" : "Add New Device"}</p>
@@ -597,42 +640,44 @@ function Dc_Inventory() {
             )}
           </tbody>
         </table>
-        <div style={{ marginTop: "16px" }}>
-          <button
-            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-            disabled={currentPage === 1}
-            style={{
-              marginRight: "8px",
-              backgroundColor: "#d91f29",
-              color: "#fff",
-            }}
-          >
-            Prev
-          </button>
 
-          {Array.from({ length: totalPages }, (_, i) => (
-            <button
-              key={i + 1}
-              onClick={() => setCurrentPage(i + 1)}
-              style={{
-                marginRight: "4px",
-                fontWeight: currentPage === i + 1 ? "bold" : "normal",
-              }}
-            >
-              {i + 1}
-            </button>
-          ))}
-
+        <div className="pagination">
           <button
-            onClick={() =>
-              setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-            }
-            disabled={currentPage === totalPages}
             style={{
               marginLeft: "8px",
               backgroundColor: "#d91f29",
               color: "#fff",
             }}
+            disabled={currentPage === 1}
+            onClick={() => setCurrentPage(currentPage - 1)}
+          >
+            Prev
+          </button>
+
+          {paginationRange.map((page, index) =>
+            page === "..." ? (
+              <span key={index} className="dots">
+                ...
+              </span>
+            ) : (
+              <button
+                key={index}
+                className={currentPage === page ? "active" : ""}
+                onClick={() => setCurrentPage(page)}
+              >
+                {page}
+              </button>
+            ),
+          )}
+
+          <button
+            style={{
+              marginLeft: "8px",
+              backgroundColor: "#d91f29",
+              color: "#fff",
+            }}
+            disabled={currentPage === totalPages}
+            onClick={() => setCurrentPage(currentPage + 1)}
           >
             Next
           </button>

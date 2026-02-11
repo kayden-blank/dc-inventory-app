@@ -354,7 +354,46 @@
   border-radius: 8px;
   background-color: #f9fbfa;
 }
+.pagination {
+  gap: 6px;
+  align-items: center;
+  margin-top: 15px;
+  flex-wrap: wrap;
+}
 
+.pagination button {
+  padding: 10px 14px;
+  border: 1px solid #ddd;
+  background: white;
+  cursor: pointer;
+  border-radius: 10px;
+  margin-left: 5px;
+}
+.pagination button:hover:not(:disabled) {
+  background-color: #f2f5f6;
+  color: black;
+  /* border: none; */
+}
+
+.pagination button.active {
+  background-color: #d91f29;
+  color: white;
+  border: 1px solid #d91f29;
+}
+
+.pagination button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.dots {
+  padding: 6px 8px;
+}
+
+.dcTable tbody tr:hover {
+  background-color: #f2f5f6;
+  cursor: pointer;
+}
 /* Animation */
 @keyframes modalFadeIn {
   from {
