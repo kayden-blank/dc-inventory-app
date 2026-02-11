@@ -744,7 +744,9 @@ function Dc_Inventory() {
                   Get the Excel template for bulk uploading inventory data.
                 </p>
               </div>
-              <button>Download Template</button>
+              <a href="/dc_inventory_template.xlsx" download>
+                <button className="download-btn">Download Template</button>
+              </a>
             </div>
 
             <p>Select Excel file</p>
