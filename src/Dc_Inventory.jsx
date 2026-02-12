@@ -34,6 +34,31 @@ function Dc_Inventory() {
     }));
   };
 
+  const exportFilteredToExcel = () => {
+    if (!filteredItems.length) {
+      alert("No data to export");
+      return;
+    }
+
+    const mapped = filteredItems.map((item) => ({
+      "Device / Label": item.device_label,
+      Model: item.model,
+      Status: item.status,
+      "Rack No.": item.rack_no,
+      "New Rack No.": item.new_rack_no,
+      "Server Owner Dept.": item.server_owner_dept,
+      "Server Admin Name": item.server_admin_name,
+      "Serial Number": item.serial_number,
+      "UBA Tag Number": item.uba_tag_number,
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(mapped);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Filtered Inventory");
+
+    XLSX.writeFile(workbook, "Filtered_Inventory.xlsx");
+  };
+
   const handleExcelPreview = async (file) => {
     if (!file) return;
     console.log("Selected file:", file);
@@ -265,13 +290,18 @@ function Dc_Inventory() {
   //Filter items based on search
   const filteredItems = items
     .filter((item) => {
-      const query = search.toLowerCase();
+      const query = search.toLowerCase().trim();
+
+      if (!query) return true;
+
       return (
         (item.device_label || "").toLowerCase().includes(query) ||
         (item.model || "").toLowerCase().includes(query) ||
         (item.server_owner_dept || "").toLowerCase().includes(query) ||
+        (item.server_admin_name || "").toLowerCase().includes(query) ||
+        (item.serial_number || "").toLowerCase().includes(query) ||
         (item.uba_tag_number || "").toLowerCase().includes(query) ||
-        (item.rack_no || "").toLowerCase().includes(query)
+        (item.new_rack_no || "").toLowerCase().includes(query)
       );
     })
     .sort((a, b) => {
@@ -530,21 +560,59 @@ function Dc_Inventory() {
           </div>
         </div>
       </div>
-
-      <input
-        type="text"
-        placeholder="Search by Device, Model, or Owner..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
+      <div
         style={{
+          display: "flex",
+          gap: "12px",
           marginBottom: "16px",
-          padding: "8px 12px",
-          width: "97%",
-          height: "30px",
-          borderRadius: "6px",
-          border: "1px solid #ccc",
+          alignItems: "center",
         }}
-      />
+      >
+        <input
+          type="text"
+          placeholder="Search by Device, Model, Rack no., Serial no., UBA tag no. or Owner..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          style={{
+            padding: "8px 12px",
+            width: "100%",
+            height: "30px",
+            borderRadius: "6px",
+            border: "1px solid #ccc",
+          }}
+        />
+
+        <button
+          onClick={exportFilteredToExcel}
+          style={{
+            backgroundColor: "#d91f29",
+            color: "#fff",
+            padding: "8px 14px",
+            borderRadius: "6px",
+            border: "none",
+            cursor: "pointer",
+            whiteSpace: "nowrap",
+          }}
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="17"
+            height="17"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="lucide lucide-download w-4 h-4"
+            data-fg-rmj4="49.16:49.10853:/components/ExportMenu.tsx:211:13:6801:32:e:Download::::::yh6"
+          >
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" x2="12" y1="15" y2="3"></line>
+          </svg>
+        </button>
+      </div>
 
       <div style={{ overflowX: "auto", width: "100%" }}>
         <table className="dcTable">
