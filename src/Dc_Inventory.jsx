@@ -2,6 +2,11 @@ import { useState, useEffect, useRef } from "react";
 import { supabase } from "./assets/Supabase";
 import "./css/Dc_Inventory.css";
 import * as XLSX from "xlsx";
+import InventoryTable from "./components/InventoryTable.jsx";
+import InventoryForm from "./components/InventoryForm.jsx";
+import BulkUploadModal from "./components/BulkUploadModal.jsx";
+import SearchBar from "./components/SearchBar.jsx";
+import Pagination from "./components/Pagination.jsx";
 
 function Dc_Inventory() {
   // console.log("SUPABASE CLIENT:", supabase);
@@ -364,123 +369,14 @@ function Dc_Inventory() {
 
   return (
     <div className="wholeBody">
-      <p className="addNew">{editingId ? "Edit Device" : "Add New Device"}</p>
-      <form ref={formRef} onSubmit={handleSubmit} className="inventory-form">
-        <div className="form-grid">
-          <div className="form_content">
-            <label>Device / Label:</label>
-            <input
-              name="device_label"
-              placeholder="Device / Label"
-              value={formData.device_label}
-              onChange={handleChange}
-              required
-            />
-          </div>
-
-          <div className="form_content">
-            <label>Model:</label>
-            <input
-              name="model"
-              placeholder="Model"
-              value={formData.model}
-              onChange={handleChange}
-              required
-            />
-          </div>
-
-          <div className="form_content">
-            <label>Status:</label>
-            <select
-              name="active"
-              value={formData.active}
-              onChange={handleChange}
-            >
-              <option value="Active">Active</option>
-              <option value="Inactive">Inactive</option>
-              <option value="ShutDown">Shut Down</option>
-              <option value="Decommissioned">Decommissioned</option>
-            </select>
-          </div>
-
-          <div className="form_content">
-            <label>Rack No:</label>
-            <input
-              name="rack_no"
-              placeholder="Rack No."
-              value={formData.rack_no}
-              onChange={handleChange}
-            />
-          </div>
-
-          <div className="form_content">
-            <label>New Rack No:</label>
-            <input
-              name="new_rack_no"
-              placeholder="New Rack No."
-              value={formData.new_rack_no}
-              onChange={handleChange}
-            />
-          </div>
-
-          <div className="form_content">
-            <label>Server Owner Dept.:</label>
-            <input
-              name="server_owner_dept"
-              placeholder="Server Owner Dept."
-              value={formData.server_owner_dept}
-              onChange={handleChange}
-            />
-          </div>
-
-          <div className="form_content">
-            <label>Server Admin Name:</label>
-            <input
-              name="server_admin_name"
-              placeholder="Server Admin Name"
-              value={formData.server_admin_name}
-              onChange={handleChange}
-            />
-          </div>
-
-          <div className="form_content">
-            <label>Serial Number:</label>
-            <input
-              name="serial_number"
-              placeholder="Serial Number"
-              value={formData.serial_number}
-              onChange={handleChange}
-            />
-          </div>
-
-          <div className="form_content">
-            <label>UBA Tag Number:</label>
-
-            <input
-              name="uba_tag_number"
-              placeholder="UBA Tag Number"
-              value={formData.uba_tag_number}
-              onChange={handleChange}
-            />
-          </div>
-        </div>
-
-        <div style={{ display: "flex", gap: "12px", marginTop: "16px" }}>
-          <button type="submit" className="submit-btn">
-            {editingId ? "Update Device" : "Add Device"}
-          </button>
-
-          {editingId && (
-            <button
-              type="button"
-              className="cancel-btn"
-              onClick={handleCancelEdit}
-            >
-              Cancel
-            </button>
-          )}
-        </div>
-      </form>
+      <InventoryForm
+        formData={formData}
+        handleChange={handleChange}
+        handleSubmit={handleSubmit}
+        editingId={editingId}
+        handleCancelEdit={handleCancelEdit}
+        formRef={formRef}
+      />
 
       <p className="inventoryList">Inventory List</p>
 
@@ -560,365 +456,36 @@ function Dc_Inventory() {
           </div>
         </div>
       </div>
-      <div
-        style={{
-          display: "flex",
-          gap: "12px",
-          marginBottom: "16px",
-          alignItems: "center",
-        }}
-      >
-        <input
-          type="text"
-          placeholder="Search by Device, Model, Rack no., Serial no., UBA tag no. or Owner..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          style={{
-            padding: "8px 12px",
-            width: "100%",
-            height: "30px",
-            borderRadius: "6px",
-            border: "1px solid #ccc",
-          }}
-        />
 
-        <button
-          onClick={exportFilteredToExcel}
-          style={{
-            backgroundColor: "#d91f29",
-            color: "#fff",
-            padding: "8px 14px",
-            borderRadius: "6px",
-            border: "none",
-            cursor: "pointer",
-            whiteSpace: "nowrap",
-          }}
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="17"
-            height="17"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            class="lucide lucide-download w-4 h-4"
-            data-fg-rmj4="49.16:49.10853:/components/ExportMenu.tsx:211:13:6801:32:e:Download::::::yh6"
-          >
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-            <polyline points="7 10 12 15 17 10"></polyline>
-            <line x1="12" x2="12" y1="15" y2="3"></line>
-          </svg>
-        </button>
-      </div>
-
+      <SearchBar
+        search={search}
+        setSearch={setSearch}
+        exportFilteredToExcel={exportFilteredToExcel}
+      />
       <div style={{ overflowX: "auto", width: "100%" }}>
-        <table className="dcTable">
-          <thead>
-            <tr>
-              <th>S/N</th>
-              <th>Device / Label</th>
-              <th>Model</th>
-              <th>Status</th>
-              <th>Rack No.</th>
-              <th>New Rack No.</th>
-              <th>Server Owner Dept.</th>
-              <th>Server Admin Name</th>
-              <th>Serial Number</th>
-              <th>UBA Tag Number</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {currentItems.length > 0 ? (
-              currentItems.map((item, index) => (
-                <tr key={item.id}>
-                  <td>{index + 1}</td> {/* S/N */}
-                  <td data-label="Device / Label">{item.device_label}</td>
-                  <td data-label="Model">{item.model}</td>
-                  <td data-label="Status">{item.status}</td>
-                  <td data-label="Rack No.">{item.rack_no}</td>
-                  <td data-label="New Rack No.">{item.new_rack_no}</td>
-                  <td data-label="Server Owner Dept.">
-                    {item.server_owner_dept}
-                  </td>
-                  <td data-label="Server Admin Name">
-                    {item.server_admin_name}
-                  </td>
-                  <td data-label="Serial Number">{item.serial_number}</td>
-                  <td data-label="UBA Tag Number">{item.uba_tag_number}</td>
-                  <td>
-                    <span className="editBtn" onClick={() => handleEdit(item)}>
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="18"
-                        height="18"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        class="lucide lucide-pencil"
-                        data-fg-cuwo110="1.15:24.1808:/components/InventoryTable.tsx:182:17:8195:20:e:Pencil::::::CHAv"
-                      >
-                        <path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"></path>
-                        <path d="m15 5 4 4"></path>
-                      </svg>
-                    </span>
-                    <span
-                      className="deleteBtn"
-                      onClick={() => handleDelete(item.id)}
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="18"
-                        height="18"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        class="lucide lucide-trash2 lucide-trash-2"
-                        data-fg-cuwo112="1.15:24.1808:/components/InventoryTable.tsx:189:17:8491:20:e:Trash2::::::CuIQ"
-                      >
-                        <path d="M3 6h18"></path>
-                        <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
-                        <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
-                        <line x1="10" x2="10" y1="11" y2="17"></line>
-                        <line x1="14" x2="14" y1="11" y2="17"></line>
-                      </svg>{" "}
-                    </span>
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td
-                  colSpan={11}
-                  style={{ textAlign: "center", padding: "20px" }}
-                >
-                  No devices found.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-
-        <div className="pagination">
-          <button
-            style={{
-              marginLeft: "8px",
-              backgroundColor: "#d91f29",
-              color: "#fff",
-            }}
-            disabled={currentPage === 1}
-            onClick={() => setCurrentPage(currentPage - 1)}
-          >
-            Prev
-          </button>
-
-          {paginationRange.map((page, index) =>
-            page === "..." ? (
-              <span key={index} className="dots">
-                ...
-              </span>
-            ) : (
-              <button
-                key={index}
-                className={currentPage === page ? "active" : ""}
-                onClick={() => setCurrentPage(page)}
-              >
-                {page}
-              </button>
-            ),
-          )}
-
-          <button
-            style={{
-              marginLeft: "8px",
-              backgroundColor: "#d91f29",
-              color: "#fff",
-            }}
-            disabled={currentPage === totalPages}
-            onClick={() => setCurrentPage(currentPage + 1)}
-          >
-            Next
-          </button>
-        </div>
+        <InventoryTable
+          currentItems={currentItems}
+          handleEdit={handleEdit}
+          handleDelete={handleDelete}
+        />
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          setCurrentPage={setCurrentPage}
+          paginationRange={paginationRange}
+        />
       </div>
 
-      {showBulkModal && (
-        <div className="modal-overlay">
-          <div className="modal">
-            <h3>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="21"
-                height="21"
-                viewBox="0 0 24 24"
-                color="red"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                class="lucide lucide-upload w-5 h-5 text-[#D91E27]"
-                data-fg-ccgn4="49.13:49.13256:/components/BulkUploadDialog.tsx:163:13:6188:45:e:Upload::::::4gZ"
-              >
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                <polyline points="17 8 12 3 7 8"></polyline>
-                <line x1="12" x2="12" y1="3" y2="15"></line>
-              </svg>{" "}
-              Bulk Upload Inventory
-            </h3>
-            <p style={{ textAlign: "left" }}>
-              Upload an Excel file containing multiple device records. Download
-              the template to ensure proper formatting.
-            </p>
-
-            <div className="downloadTemplate">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                class="lucide lucide-file-spreadsheet w-5 h-5 text-gray-600"
-                data-fg-ccgn12="49.13:49.13256:/components/BulkUploadDialog.tsx:175:15:6748:53:e:FileSpreadsheet::::::EINS"
-              >
-                <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path>
-                <path d="M14 2v4a2 2 0 0 0 2 2h4"></path>
-                <path d="M8 13h2"></path>
-                <path d="M14 13h2"></path>
-                <path d="M8 17h2"></path>
-                <path d="M14 17h2"></path>
-              </svg>
-
-              <div>
-                <p style={{ fontSize: "12px", color: "#555" }}>
-                  <span style={{ fontWeight: "bold", fontSize: "15px" }}>
-                    Download Template
-                  </span>
-                  <br></br>
-                  Get the Excel template for bulk uploading inventory data.
-                </p>
-              </div>
-              <a href="/dc_inventory_template.xlsx" download>
-                <button className="download-btn">Download Template</button>
-              </a>
-            </div>
-
-            <p>Select Excel file</p>
-            <input
-              type="file"
-              accept=".xlsx"
-              onChange={(e) => handleExcelPreview(e.target.files[0])}
-            />
-
-            {previewData.length > 0 && (
-              <>
-                <div className="readyToUpload">
-                  <p>{previewData.length} records ready to upload</p>
-                  <p>
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="15"
-                      height="15"
-                      color="#01A63F"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      class="lucide lucide-circle-check w-4 h-4"
-                      data-fg-ccgn48="49.13:49.13256:/components/BulkUploadDialog.tsx:240:23:9333:36:e:CheckCircle2::::::CELI"
-                    >
-                      <circle cx="12" cy="12" r="10"></circle>
-                      <path d="m9 12 2 2 4-4"></path>
-                    </svg>{" "}
-                    <span style={{ color: "#01A63F" }}>Ready to upload</span>
-                  </p>
-                </div>
-                <div className="table-wrapper">
-                  <table>
-                    <thead>
-                      <th
-                        colSpan={6}
-                        style={{ textAlign: "left", fontSize: "12px" }}
-                      >
-                        Preview (first 5 records)
-                      </th>
-                      <tr>
-                        <th>Device / Label</th>
-                        <th>Model</th>
-                        <th>Rack No.</th>
-                        <th>New Rack No.</th>
-                        <th>Serial Number</th>
-                        <th>UBA Tag</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {previewData.slice(0, 5).map((row, index) => (
-                        <tr key={index}>
-                          <td>{row.device_label}</td>
-                          <td>{row.model}</td>
-                          <td>{row.rack_no}</td>
-                          <td>{row.new_rack_no}</td>
-                          <td>{row.serial_number}</td>
-                          <td>{row.uba_tag_number}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </>
-            )}
-            <div className="modal-actions">
-              <button className="close-btn" onClick={handleCloseBulkModal}>
-                Close
-              </button>
-              <button
-                onClick={handleConfirmUpload}
-                disabled={uploading || previewData.length === 0}
-                style={{
-                  opacity: previewData.length === 0 ? 0.5 : 1,
-                  backgroundColor: "#d91f29",
-                  color: "#fff",
-                }}
-              >
-                {uploading
-                  ? "Saving..."
-                  : `Upload ${previewData.length} Devices`}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <BulkUploadModal
+        show={showBulkModal}
+        previewData={previewData}
+        uploading={uploading}
+        handleExcelPreview={handleExcelPreview}
+        handleConfirmUpload={handleConfirmUpload}
+        handleClose={handleCloseBulkModal}
+      />
     </div>
   );
 }
-
-// const thStyle = {
-//   border: "1px solid #E5E6EA",
-//   padding: "8px",
-//   background: "#F9FBFA",
-//   textAlign: "left",
-// };
-
-// const tdStyle = {
-//   border: "1px solid #ddd",
-//   padding: "8px",
-//   background: "#FFFFFF",
-// };
 
 export default Dc_Inventory;
