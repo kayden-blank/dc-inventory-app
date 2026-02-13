@@ -22,7 +22,7 @@ function Dc_Inventory() {
   const [formData, setFormData] = useState({
     device_label: "",
     model: "",
-    active: "Active",
+    status: "Active",
     rack_no: "",
     new_rack_no: "",
     server_owner_dept: "",
@@ -164,7 +164,7 @@ function Dc_Inventory() {
     setFormData({
       device_label: "",
       model: "",
-      active: "Active",
+      status: "Active",
       rack_no: "",
       new_rack_no: "",
       server_owner_dept: "",
@@ -261,7 +261,7 @@ function Dc_Inventory() {
     setFormData({
       device_label: item.device_label,
       model: item.model,
-      active: item.active,
+      status: item.active,
       rack_no: item.rack_no,
       new_rack_no: item.new_rack_no,
       server_owner_dept: item.server_owner_dept,

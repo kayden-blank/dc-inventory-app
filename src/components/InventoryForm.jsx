@@ -38,8 +38,8 @@ function InventoryForm({
           <div className="form_content">
             <label>Status:</label>
             <select
-              name="active"
-              value={formData.active}
+              name="status"
+              value={formData.status}
               onChange={handleChange}
             >
               <option value="Active">Active</option>
