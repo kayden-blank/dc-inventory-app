@@ -16,6 +16,7 @@ function InventoryTable({ currentItems, handleEdit, handleDelete }) {
             <th>Server Admin Name</th>
             <th>Serial Number</th>
             <th>UBA Tag Number</th>
+            <th>Deployment Date</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -34,6 +35,9 @@ function InventoryTable({ currentItems, handleEdit, handleDelete }) {
                 <td>{item.server_admin_name}</td>
                 <td>{item.serial_number}</td>
                 <td>{item.uba_tag_number}</td>
+                <td>
+                  {item.deployment_date === null ? "N/A" : item.deployment_date}
+                </td>
                 <td>
                   <span className="editBtn" onClick={() => handleEdit(item)}>
                     <svg

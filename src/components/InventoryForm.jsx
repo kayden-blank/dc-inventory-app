@@ -109,6 +109,16 @@ function InventoryForm({
               onChange={handleChange}
             />
           </div>
+
+          <div className="form_content">
+            <label>Deployment Date:</label>
+            <input
+              name="deployment_date"
+              type="date"
+              value={formData.deployment_date || ""}
+              onChange={handleChange}
+            />
+          </div>
         </div>
 
         <div style={{ display: "flex", gap: "12px", marginTop: "16px" }}>

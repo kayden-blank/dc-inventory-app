@@ -121,6 +121,7 @@ function BulkUploadModal({
                     <th>New Rack No.</th>
                     <th>Serial Number</th>
                     <th>UBA Tag</th>
+                    <th>Deployment Date</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -132,6 +133,7 @@ function BulkUploadModal({
                       <td>{row.new_rack_no}</td>
                       <td>{row.serial_number}</td>
                       <td>{row.uba_tag_number}</td>
+                      <td>{row.deployment_date}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -140,7 +142,7 @@ function BulkUploadModal({
           </>
         )}
         <div className="modal-actions">
-          <button className="close-btn" onClick={handleCloseBulkModal}>
+          <button className="close-btn" onClick={handleClose}>
             Close
           </button>
           <button

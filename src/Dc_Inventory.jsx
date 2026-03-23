@@ -7,6 +7,7 @@ import InventoryForm from "./components/InventoryForm.jsx";
 import BulkUploadModal from "./components/BulkUploadModal.jsx";
 import SearchBar from "./components/SearchBar.jsx";
 import Pagination from "./components/Pagination.jsx";
+import ExportModal from "./components/ExportModal.jsx";
 
 function Dc_Inventory() {
   // console.log("SUPABASE CLIENT:", supabase);
@@ -18,6 +19,9 @@ function Dc_Inventory() {
   const [showBulkModal, setShowBulkModal] = useState(false);
   const [previewData, setPreviewData] = useState([]);
   const [uploading, setUploading] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [exportFormat, setExportFormat] = useState("excel");
+  const [selectedColumns, setSelectedColumns] = useState([]);
 
   const [formData, setFormData] = useState({
     device_label: "",
@@ -29,13 +33,14 @@ function Dc_Inventory() {
     server_admin_name: "",
     serial_number: "",
     uba_tag_number: "",
+    deployment_date: null,
   });
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: value || null, // Convert empty strings to null for optional fields
     }));
   };
 
@@ -83,6 +88,7 @@ function Dc_Inventory() {
         server_admin_name: row["Admin Name"]?.toString().trim(),
         serial_number: row["Serial Number"]?.toString().trim(),
         uba_tag_number: row["UBA Tag Number"]?.toString().trim(),
+        deployment_date: row["Deployment Date"],
       }));
 
       setPreviewData(mapped);
@@ -171,11 +177,16 @@ function Dc_Inventory() {
       server_admin_name: "",
       serial_number: "",
       uba_tag_number: "",
+      deployment_date: null,
     });
   };
-  const exportToExcel = async (filterActive = false) => {
+
+  const exportData = async ({
+    format = "excel", // "excel" | "pdf"
+    filterActive = false,
+    selectedColumns = null, // null = all columns
+  }) => {
     try {
-      // Fetch data from Supabase
       let query = supabase.from("dc_inventory").select("*");
 
       if (filterActive) {
@@ -187,8 +198,7 @@ function Dc_Inventory() {
       const { data, error } = await query;
 
       if (error) {
-        console.error("Supabase fetch error:", error);
-        alert("Failed to fetch data for export");
+        alert("Failed to fetch data");
         return;
       }
 
@@ -197,35 +207,143 @@ function Dc_Inventory() {
         return;
       }
 
-      // Map data to proper format for Excel
-      const mapped = data.map((item) => ({
-        "Device / Label": item.device_label,
-        Model: item.model,
-        Status: item.status,
-        "Rack No.": item.rack_no,
-        "New Rack No.": item.new_rack_no,
-        "Server Owner Dept.": item.server_owner_dept,
-        "Server Admin Name": item.server_admin_name,
-        "Serial Number": item.serial_number,
-        "UBA Tag Number": item.uba_tag_number,
-      }));
+      // ✅ Define ALL possible columns
+      const allColumns = {
+        device_label: "Device / Label",
+        model: "Model",
+        status: "Status",
+        rack_no: "Rack No.",
+        new_rack_no: "New Rack No.",
+        server_owner_dept: "Server Owner Dept.",
+        server_admin_name: "Server Admin Name",
+        serial_number: "Serial Number",
+        uba_tag_number: "UBA Tag Number",
+        deployment_date: "Deployment Date",
+      };
 
-      // Create workbook and sheet
-      const worksheet = XLSX.utils.json_to_sheet(mapped);
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Inventory");
+      // ✅ Filter columns if custom export
+      const columnsToUse = selectedColumns
+        ? Object.fromEntries(
+            Object.entries(allColumns).filter(([key]) =>
+              selectedColumns.includes(key),
+            ),
+          )
+        : allColumns;
 
-      // Export file
-      const fileName = filterActive
-        ? "Active_Inventory.xlsx"
-        : "All_Inventory.xlsx";
+      // ✅ Map data dynamically
+      const mapped = data.map((item) => {
+        const obj = {};
+        for (let key in columnsToUse) {
+          obj[columnsToUse[key]] = item[key];
+        }
+        return obj;
+      });
 
-      XLSX.writeFile(workbook, fileName);
+      // =======================
+      // 📊 EXPORT EXCEL
+      // =======================
+      if (format === "excel") {
+        const worksheet = XLSX.utils.json_to_sheet(mapped);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Inventory");
+
+        XLSX.writeFile(workbook, "Inventory.xlsx");
+      }
+
+      // =======================
+      // 📄 EXPORT PDF
+      // =======================
+      if (format === "pdf") {
+        const jsPDF = (await import("jspdf")).default;
+        const autoTable = (await import("jspdf-autotable")).default;
+
+        const doc = new jsPDF({
+          orientation: "landscape", // 👈 VERY IMPORTANT
+        });
+
+        const headers = [Object.values(columnsToUse)];
+        const rows = mapped.map((row) => Object.values(row));
+
+        autoTable(doc, {
+          head: headers,
+          body: rows,
+
+          styles: {
+            fontSize: 8, // smaller text = more space
+            cellPadding: 3,
+            overflow: "linebreak",
+          },
+          tableWidth: "auto",
+          headStyles: {
+            fillColor: [217, 32, 41], // optional styling
+          },
+
+          didDrawPage: (data) => {
+            doc.setFontSize(10);
+            doc.text("Inventory Export", data.settings.margin.left, 10);
+          },
+        });
+
+        doc.save("Inventory.pdf");
+      }
     } catch (err) {
       console.error(err);
-      alert("Failed to export Excel file");
+      alert("Export failed");
     }
   };
+  // const exportToExcel = async (filterActive = false) => {
+  //   try {
+  //     // Fetch data from Supabase
+  //     let query = supabase.from("dc_inventory").select("*");
+
+  //     if (filterActive) {
+  //       query = query
+  //         .eq("status", "Active")
+  //         .order("rack_no", { ascending: true });
+  //     }
+
+  //     const { data, error } = await query;
+
+  //     if (error) {
+  //       console.error("Supabase fetch error:", error);
+  //       alert("Failed to fetch data for export");
+  //       return;
+  //     }
+
+  //     if (!data || data.length === 0) {
+  //       alert("No data to export");
+  //       return;
+  //     }
+
+  //     // Map data to proper format for Excel
+  //     const mapped = data.map((item) => ({
+  //       "Device / Label": item.device_label,
+  //       Model: item.model,
+  //       Status: item.status,
+  //       "Rack No.": item.rack_no,
+  //       "New Rack No.": item.new_rack_no,
+  //       "Server Owner Dept.": item.server_owner_dept,
+  //       "Server Admin Name": item.server_admin_name,
+  //       "Serial Number": item.serial_number,
+  //       "UBA Tag Number": item.uba_tag_number,
+  //     }));
+
+  //     // Create workbook and sheet
+  //     const worksheet = XLSX.utils.json_to_sheet(mapped);
+  //     const workbook = XLSX.utils.book_new();
+  //     XLSX.utils.book_append_sheet(workbook, worksheet, "Inventory");
+
+  //     // Export file
+  //     const fileName = filterActive
+  //       ? "Active_Inventory.xlsx"
+  //       : "All_Inventory.xlsx";
+
+  //     XLSX.writeFile(workbook, fileName);
+  //   } catch (err) {
+  //     console.error(err);
+  //     alert("Failed to export Excel file");
+  //   }
+  // };
   const fetchItems = async () => {
     const { data, error } = await supabase
       .from("dc_inventory")
@@ -261,13 +379,14 @@ function Dc_Inventory() {
     setFormData({
       device_label: item.device_label,
       model: item.model,
-      status: item.active,
+      status: item.status,
       rack_no: item.rack_no,
       new_rack_no: item.new_rack_no,
       server_owner_dept: item.server_owner_dept,
       server_admin_name: item.server_admin_name,
       serial_number: item.serial_number,
       uba_tag_number: item.uba_tag_number,
+      deployment_date: item.deployment_date,
     });
     setEditingId(item.id);
 
@@ -283,13 +402,14 @@ function Dc_Inventory() {
     setFormData({
       device_label: "",
       model: "",
-      active: "Active",
+      status: "Active",
       rack_no: "",
       new_rack_no: "",
       server_owner_dept: "",
       server_admin_name: "",
       serial_number: "",
       uba_tag_number: "",
+      deployment_date: "",
     });
   };
   //Filter items based on search
@@ -446,11 +566,22 @@ function Dc_Inventory() {
               Export
             </button>
             <div className="dropdown-content">
-              <button onClick={() => exportToExcel(false)}>
-                <span>📄</span> Export All
+              <button onClick={() => exportData({ format: "excel" })}>
+                📄 Export to Excel
               </button>
-              <button onClick={() => exportToExcel(true)}>
-                <span>✅</span> Export Active
+
+              <button onClick={() => exportData({ format: "pdf" })}>
+                📄 Export to PDF
+              </button>
+
+              <hr />
+
+              <button onClick={() => setShowExportModal(true)}>
+                Custom Export to Excel
+              </button>
+
+              <button onClick={() => setShowExportModal(true)}>
+                Custom Export to PDF
               </button>
             </div>
           </div>
@@ -483,6 +614,19 @@ function Dc_Inventory() {
         handleExcelPreview={handleExcelPreview}
         handleConfirmUpload={handleConfirmUpload}
         handleClose={handleCloseBulkModal}
+      />
+      <ExportModal
+        show={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        selectedColumns={selectedColumns}
+        setSelectedColumns={setSelectedColumns}
+        onExport={(format) => {
+          exportData({
+            format,
+            selectedColumns,
+          });
+          setShowExportModal(false);
+        }}
       />
     </div>
   );
