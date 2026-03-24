@@ -98,7 +98,14 @@ function ExportModal({
             </label>
           ))}
         </div>
-        <div style={{ marginTop: "16px" }}>
+        <div
+          style={{
+            marginTop: "16px",
+            display: "flex",
+            justifyContent: "flex-end", // pushes buttons to the right
+            gap: "10px", // space between buttons
+          }}
+        >
           <button onClick={() => onExport("excel")}>Export Excel</button>
 
           <button onClick={() => onExport("pdf")}>Export PDF</button>

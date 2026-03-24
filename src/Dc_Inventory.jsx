@@ -574,14 +574,8 @@ function Dc_Inventory() {
                 📄 Export to PDF
               </button>
 
-              <hr />
-
               <button onClick={() => setShowExportModal(true)}>
-                Custom Export to Excel
-              </button>
-
-              <button onClick={() => setShowExportModal(true)}>
-                Custom Export to PDF
+                Custom Export
               </button>
             </div>
           </div>
