@@ -106,6 +106,8 @@ function Dc_Inventory() {
     ],
   };
 
+  // console.log("Current formData:", formData);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
