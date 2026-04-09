@@ -67,7 +67,7 @@ function Dc_Inventory() {
       remarks: "",
     },
   };
-
+  //would be nice to have a dynamic form that uses formMap to generate fields based on activeTab, but for now we'll keep them separate for simplicity
   const [formData, setFormData] = useState(resetFormByTab[activeTab]);
   const formMap = {
     server: [
