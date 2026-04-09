@@ -1,3 +1,4 @@
+import "../css/BulkUploadModal.css";
 function BulkUploadModal({
   show,
   previewData,
@@ -5,8 +6,37 @@ function BulkUploadModal({
   handleExcelPreview,
   handleConfirmUpload,
   handleClose,
+  activeTab,
 }) {
   if (!show) return null;
+
+  const previewColumns = {
+    server: [
+      "device_label",
+      "model",
+      "rack_no",
+      "new_rack_no",
+      "serial_number",
+      "uba_tag_number",
+      "deployment_date",
+    ],
+    power: [
+      "device_name",
+      "device_type",
+      "device_model",
+      "device_location",
+      "serial_number",
+      "uba_tag",
+    ],
+    cooling: [
+      "device_name",
+      "device_type",
+      "device_model",
+      "device_location",
+      "serial_number",
+      "uba_tag",
+    ],
+  };
 
   return (
     <div className="modal-overlay">
@@ -108,32 +138,31 @@ function BulkUploadModal({
             <div className="table-wrapper">
               <table>
                 <thead>
-                  <th
-                    colSpan={6}
-                    style={{ textAlign: "left", fontSize: "12px" }}
-                  >
-                    Preview (first 5 records)
-                  </th>
                   <tr>
-                    <th>Device / Label</th>
-                    <th>Model</th>
-                    <th>Rack No.</th>
-                    <th>New Rack No.</th>
-                    <th>Serial Number</th>
-                    <th>UBA Tag</th>
-                    <th>Deployment Date</th>
+                    {previewColumns[activeTab].map((col) => (
+                      <th key={col}>{col}</th>
+                    ))}
+                    <th>Status</th>
                   </tr>
                 </thead>
+
                 <tbody>
                   {previewData.slice(0, 5).map((row, index) => (
                     <tr key={index}>
-                      <td>{row.device_label}</td>
-                      <td>{row.model}</td>
-                      <td>{row.rack_no}</td>
-                      <td>{row.new_rack_no}</td>
-                      <td>{row.serial_number}</td>
-                      <td>{row.uba_tag_number}</td>
-                      <td>{row.deployment_date}</td>
+                      {previewColumns[activeTab].map((col) => (
+                        <td key={col}>{row[col]}</td>
+                      ))}
+                      <td>
+                        {row._isValid === false ? (
+                          <span style={{ color: "red", fontSize: "12px" }}>
+                            {row._errors?.join(", ")}
+                          </span>
+                        ) : (
+                          <span style={{ color: "green", fontSize: "12px" }}>
+                            Valid
+                          </span>
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

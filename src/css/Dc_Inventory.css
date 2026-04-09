@@ -360,6 +360,60 @@
   margin-top: 15px;
   flex-wrap: wrap;
 }
+.toggle-container {
+  display: inline-flex;
+  gap: 6px;
+  background: #f3f4f6;
+  padding: 6px;
+  border-radius: 12px;
+}
+
+.toggle-btn {
+  position: relative;
+  padding: 10px 18px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #6b7280;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.toggle-btn:hover {
+  color: #111827;
+}
+
+.toggle-btn.active {
+  color: white;
+}
+
+.toggle-bg {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to right, #d91e27, #b81820);
+  border-radius: 8px;
+  z-index: 0;
+}
+
+.toggle-btn span,
+.toggle-btn .icon {
+  position: relative;
+  z-index: 1;
+}
+
+.icon {
+  width: 18px;
+  height: 18px;
+  color: #9ca3af;
+}
+
+.active-icon {
+  color: white;
+}
 
 .pagination button {
   padding: 10px 14px;

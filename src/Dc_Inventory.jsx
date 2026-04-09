@@ -8,10 +8,11 @@ import BulkUploadModal from "./components/BulkUploadModal.jsx";
 import SearchBar from "./components/SearchBar.jsx";
 import Pagination from "./components/Pagination.jsx";
 import ExportModal from "./components/ExportModal.jsx";
+import AssetTypeToggle from "./components/AssetTypeToggle.jsx";
 
 function Dc_Inventory() {
   // console.log("SUPABASE CLIENT:", supabase);
-  const [items, setItems] = useState([]);
+
   const [editingId, setEditingId] = useState(null);
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -20,21 +21,90 @@ function Dc_Inventory() {
   const [previewData, setPreviewData] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
-  const [exportFormat, setExportFormat] = useState("excel");
   const [selectedColumns, setSelectedColumns] = useState([]);
+  const [activeTab, setActiveTab] = useState("server"); // default
+  const [tableData, setTableData] = useState([]);
+  const [validData, setValidData] = useState([]);
+  const formRef = useRef(null);
+  const tableMap = {
+    server: "dc_inventory",
+    power: "power_devices",
+    cooling: "cooling_devices",
+  };
+  const resetFormByTab = {
+    server: {
+      device_label: "",
+      model: "",
+      status: "Active",
+      rack_no: "",
+      new_rack_no: "",
+      server_owner_dept: "",
+      server_admin_name: "",
+      serial_number: "",
+      uba_tag_number: "",
+      deployment_date: null,
+    },
+    power: {
+      device_name: "",
+      device_type: "",
+      device_model: "",
+      device_location: "",
+      operational_status: "Operational",
+      condition_status: "",
+      serial_number: "",
+      uba_tag: "",
+    },
+    cooling: {
+      device_name: "",
+      device_type: "",
+      device_model: "",
+      device_location: "",
+      year_procured: "",
+      year_installed: "",
+      status: "",
+      serial_number: "",
+      uba_tag: "",
+      remarks: "",
+    },
+  };
 
-  const [formData, setFormData] = useState({
-    device_label: "",
-    model: "",
-    status: "Active",
-    rack_no: "",
-    new_rack_no: "",
-    server_owner_dept: "",
-    server_admin_name: "",
-    serial_number: "",
-    uba_tag_number: "",
-    deployment_date: null,
-  });
+  const [formData, setFormData] = useState(resetFormByTab[activeTab]);
+  const formMap = {
+    server: [
+      "device_label",
+      "model",
+      "status",
+      "rack_no",
+      "new_rack_no",
+      "server_owner_dept",
+      "server_admin_name",
+      "serial_number",
+      "uba_tag_number",
+      "deployment_date",
+    ],
+    power: [
+      "device_name",
+      "device_type",
+      "device_model",
+      "device_location",
+      "operational_status",
+      "condition_status",
+      "serial_number",
+      "uba_tag",
+    ],
+    cooling: [
+      "device_name",
+      "device_type",
+      "device_model",
+      "device_location",
+      "year_procured",
+      "year_installed",
+      "status",
+      "serial_number",
+      "uba_tag",
+      "remarks",
+    ],
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -50,23 +120,61 @@ function Dc_Inventory() {
       return;
     }
 
-    const mapped = filteredItems.map((item) => ({
-      "Device / Label": item.device_label,
-      Model: item.model,
-      Status: item.status,
-      "Rack No.": item.rack_no,
-      "New Rack No.": item.new_rack_no,
-      "Server Owner Dept.": item.server_owner_dept,
-      "Server Admin Name": item.server_admin_name,
-      "Serial Number": item.serial_number,
-      "UBA Tag Number": item.uba_tag_number,
-    }));
+    // Define export column maps per tab
+    const exportColumnsMap = {
+      server: {
+        device_label: "Device / Label",
+        model: "Model",
+        status: "Status",
+        rack_no: "Rack No.",
+        new_rack_no: "New Rack No.",
+        server_owner_dept: "Server Owner Dept.",
+        server_admin_name: "Server Admin Name",
+        serial_number: "Serial Number",
+        uba_tag_number: "UBA Tag Number",
+        deployment_date: "Deployment Date",
+      },
+      power: {
+        device_name: "Device Name",
+        device_type: "Device Type",
+        device_model: "Device Model",
+        device_location: "Location",
+        operational_status: "Operational Status",
+        condition_status: "Condition Status",
+        serial_number: "Serial Number",
+        uba_tag: "UBA Tag",
+      },
+      cooling: {
+        device_name: "Device Name",
+        device_type: "Device Type",
+        device_model: "Model",
+        device_location: "Location",
+        year_procured: "Year Procured",
+        year_installed: "Year Installed",
+        status: "Status",
+        serial_number: "Serial Number",
+        uba_tag: "UBA Tag",
+        remarks: "Remarks",
+      },
+    };
 
+    // Get the columns for the current tab
+    const columns = exportColumnsMap[activeTab];
+
+    // Map filteredItems dynamically
+    const mapped = filteredItems.map((item) => {
+      const obj = {};
+      Object.entries(columns).forEach(([key, label]) => {
+        obj[label] = item[key] ?? "";
+      });
+      return obj;
+    });
+
+    // Create Excel file
     const worksheet = XLSX.utils.json_to_sheet(mapped);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Filtered Inventory");
-
-    XLSX.writeFile(workbook, "Filtered_Inventory.xlsx");
+    XLSX.writeFile(workbook, `${activeTab}_Filtered_Inventory.xlsx`);
   };
 
   const handleExcelPreview = async (file) => {
@@ -77,19 +185,90 @@ function Dc_Inventory() {
       const workbook = XLSX.read(buffer);
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       const rows = XLSX.utils.sheet_to_json(sheet);
+      const importMap = {
+        server: {
+          "Device / Label": "device_label",
+          Model: "model",
+          Status: "status",
+          "Rack No.": "rack_no",
+          "New Rack No.": "new_rack_no",
+          "Server Owner Department": "server_owner_dept",
+          "Admin Name": "server_admin_name",
+          "Serial Number": "serial_number",
+          "UBA Tag Number": "uba_tag_number",
+          "Deployment Date": "deployment_date",
+        },
 
-      const mapped = rows.map((row) => ({
-        device_label: row["Device / Label"]?.toString().trim(),
-        model: row["Model"]?.toString().trim(),
-        status: row["Status"]?.toString().trim(),
-        rack_no: row["Rack No."]?.toString().trim(),
-        new_rack_no: row["New Rack No."]?.toString().trim(),
-        server_owner_dept: row["Server Owner Department"]?.toString().trim(),
-        server_admin_name: row["Admin Name"]?.toString().trim(),
-        serial_number: row["Serial Number"]?.toString().trim(),
-        uba_tag_number: row["UBA Tag Number"]?.toString().trim(),
-        deployment_date: row["Deployment Date"],
-      }));
+        power: {
+          "Device Name": "device_name",
+          "Device Type": "device_type",
+          "Device Model": "device_model",
+          Location: "device_location",
+          "Operational Status": "operational_status",
+          "Condition Status": "condition_status",
+          "Serial Number": "serial_number",
+          "UBA Tag": "uba_tag",
+        },
+
+        cooling: {
+          "Device Name": "device_name",
+          "Device Type": "device_type",
+          Model: "device_model",
+          Location: "device_location",
+          "Year Procured": "year_procured",
+          "Year Installed": "year_installed",
+          Status: "status",
+          "Serial Number": "serial_number",
+          "UBA Tag": "uba_tag",
+          Remarks: "remarks",
+        },
+      };
+
+      const mapping = importMap[activeTab];
+
+      const mapped = rows.map((row, index) => {
+        const obj = {};
+        Object.entries(mapping).forEach(([excelKey, dbKey]) => {
+          obj[dbKey] = row[excelKey]?.toString().trim() ?? null;
+        });
+        // ✅ ADD VALIDATION
+        let isValid = true;
+        let errors = [];
+
+        if (activeTab === "server") {
+          if (!obj.device_label) {
+            isValid = false;
+            errors.push("Missing Device Label");
+          }
+          if (!obj.model) {
+            isValid = false;
+            errors.push("Missing Model");
+          }
+        }
+
+        if (activeTab === "power" || activeTab === "cooling") {
+          if (!obj.device_name) {
+            isValid = false;
+            errors.push("Missing Device Name");
+          }
+          if (!obj.device_type) {
+            isValid = false;
+            errors.push("Missing Device Type");
+          }
+        }
+
+        return {
+          ...obj,
+          _isValid: isValid,
+          _errors: errors,
+          _rowNumber: index + 2, // +2 because of header and 0-index
+        };
+      });
+      const validRows = mapped
+        .filter((row) => row._isValid)
+        .map(({ _isValid, _errors, _rowNumber, ...clean }) => clean);
+
+      setValidData(validRows);
 
       setPreviewData(mapped);
       console.log("Raw Excel Rows:", rows);
@@ -106,79 +285,78 @@ function Dc_Inventory() {
     setUploading(false);
   };
   const handleConfirmUpload = async () => {
-    if (!previewData.length) return;
-
-    setUploading(true);
-
-    const { error } = await supabase.from("dc_inventory").insert(previewData);
-
-    setUploading(false);
-
-    if (error) {
-      console.error("UPLOAD ERROR:", error);
-      alert(error.message);
+    if (!validData.length) {
+      alert("No valid data to upload");
       return;
     }
 
-    alert(`Successfully uploaded ${previewData.length} records`);
-    setPreviewData([]);
-    setShowBulkModal(false);
-    fetchItems();
+    const tableName = tableMap[activeTab];
+
+    try {
+      setUploading(true);
+
+      const { error } = await supabase.from(tableName).insert(validData);
+
+      if (error) {
+        throw error;
+      }
+
+      alert(
+        `Uploaded ${validData.length} valid records. ${previewData.length - validData.length} ${previewData.length - validData.length === 1 ? "row was" : "rows were"} skipped due to errors.`,
+      );
+
+      setPreviewData([]);
+      setValidData([]);
+      fetchData();
+    } catch (err) {
+      console.error("Upload error:", err);
+      alert(`Upload failed: ${err.message}`);
+    } finally {
+      setUploading(false); // ✅ ALWAYS runs
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log(
+      "Submitting form with data:",
+      formData,
+      "Editing ID:",
+      editingId,
+    );
+    const tableName = tableMap[activeTab];
+
+    const allowedFields = formMap[activeTab];
+    console.log("Allowed fields for this tab:", allowedFields);
+
+    const filteredData = Object.fromEntries(
+      formMap[activeTab].map((key) => [key, formData[key] ?? ""]),
+    );
+
+    console.log("Filtered Data:", filteredData);
 
     if (editingId) {
-      // UPDATE existing item
       const { error } = await supabase
-        .from("dc_inventory")
-        .update(formData)
+        .from(tableName)
+        .update(filteredData)
         .eq("id", editingId);
 
       if (error) {
-        console.error("UPDATE ERROR:", error);
-        alert(error.message);
+        console.error(error);
         return;
       }
-
-      // Update item in state
-      setItems(
-        items.map((item) =>
-          item.id === editingId ? { ...item, ...formData } : item,
-        ),
-      );
-      setEditingId(null); // stop editing
     } else {
-      // INSERT new item
-      const { error } = await supabase.from("dc_inventory").insert([formData]);
+      const { error } = await supabase.from(tableName).insert([filteredData]);
+
       if (error) {
-        console.error("INSERT ERROR:", error);
-        alert(error.message);
+        console.error(error);
         return;
       }
-
-      const { data } = await supabase
-        .from("dc_inventory")
-        .select("*")
-        .order("id", { ascending: true });
-
-      setItems(data);
     }
 
-    // Reset form
-    setFormData({
-      device_label: "",
-      model: "",
-      status: "Active",
-      rack_no: "",
-      new_rack_no: "",
-      server_owner_dept: "",
-      server_admin_name: "",
-      serial_number: "",
-      uba_tag_number: "",
-      deployment_date: null,
-    });
+    fetchData();
+    setEditingId(null);
+    setFormData(resetFormByTab[activeTab]);
   };
 
   const exportData = async ({
@@ -187,9 +365,12 @@ function Dc_Inventory() {
     selectedColumns = null, // null = all columns
   }) => {
     try {
-      let query = supabase.from("dc_inventory").select("*");
+      const tableName = tableMap[activeTab]; // ✅ dynamic table
 
-      if (filterActive) {
+      let query = supabase.from(tableName).select("*");
+
+      // Optional filter (only if column exists)
+      if (filterActive && activeTab === "server") {
         query = query
           .eq("status", "Active")
           .order("rack_no", { ascending: true });
@@ -208,34 +389,63 @@ function Dc_Inventory() {
       }
 
       // ✅ Define ALL possible columns
-      const allColumns = {
-        device_label: "Device / Label",
-        model: "Model",
-        status: "Status",
-        rack_no: "Rack No.",
-        new_rack_no: "New Rack No.",
-        server_owner_dept: "Server Owner Dept.",
-        server_admin_name: "Server Admin Name",
-        serial_number: "Serial Number",
-        uba_tag_number: "UBA Tag Number",
-        deployment_date: "Deployment Date",
+      const exportColumnsMap = {
+        server: {
+          device_label: "Device / Label",
+          model: "Model",
+          status: "Status",
+          rack_no: "Rack No.",
+          new_rack_no: "New Rack No.",
+          server_owner_dept: "Server Owner Dept.",
+          server_admin_name: "Server Admin Name",
+          serial_number: "Serial Number",
+          uba_tag_number: "UBA Tag Number",
+          deployment_date: "Deployment Date",
+        },
+
+        power: {
+          device_name: "Device Name",
+          device_type: "Device Type",
+          device_model: "Device Model",
+          device_location: "Location",
+          operational_status: "Operational Status",
+          condition_status: "Condition Status",
+          serial_number: "Serial Number",
+          uba_tag: "UBA Tag",
+        },
+
+        cooling: {
+          device_name: "Device Name",
+          device_type: "Device Type",
+          device_model: "Model",
+          device_location: "Location",
+          year_procured: "Year Procured",
+          year_installed: "Year Installed",
+          status: "Status",
+          serial_number: "Serial Number",
+          uba_tag: "UBA Tag",
+          remarks: "Remarks",
+        },
       };
 
-      // ✅ Filter columns if custom export
-      const columnsToUse = selectedColumns
-        ? Object.fromEntries(
-            Object.entries(allColumns).filter(([key]) =>
-              selectedColumns.includes(key),
-            ),
-          )
-        : allColumns;
+      // Convert allColumns object into array of { key, label }
+      // Convert exportColumnsMap[activeTab] into array of { key, label }
+      const allColumnsArray = Object.entries(exportColumnsMap[activeTab]).map(
+        ([key, label]) => ({ key, label }),
+      );
+
+      // Filter columns if selectedColumns is provided
+      const columnsToUse =
+        selectedColumns && selectedColumns.length > 0
+          ? allColumnsArray.filter((col) => selectedColumns.includes(col.key))
+          : allColumnsArray;
 
       // ✅ Map data dynamically
       const mapped = data.map((item) => {
         const obj = {};
-        for (let key in columnsToUse) {
-          obj[columnsToUse[key]] = item[key];
-        }
+        columnsToUse.forEach((col) => {
+          obj[col.label] = item[col.key];
+        });
         return obj;
       });
 
@@ -247,7 +457,7 @@ function Dc_Inventory() {
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, "Inventory");
 
-        XLSX.writeFile(workbook, "Inventory.xlsx");
+        XLSX.writeFile(workbook, `${activeTab}_inventory.xlsx`);
       }
 
       // =======================
@@ -261,7 +471,7 @@ function Dc_Inventory() {
           orientation: "landscape", // 👈 VERY IMPORTANT
         });
 
-        const headers = [Object.values(columnsToUse)];
+        const headers = [columnsToUse.map((col) => col.label)];
         const rows = mapped.map((row) => Object.values(row));
 
         autoTable(doc, {
@@ -291,80 +501,13 @@ function Dc_Inventory() {
       alert("Export failed");
     }
   };
-  // const exportToExcel = async (filterActive = false) => {
-  //   try {
-  //     // Fetch data from Supabase
-  //     let query = supabase.from("dc_inventory").select("*");
-
-  //     if (filterActive) {
-  //       query = query
-  //         .eq("status", "Active")
-  //         .order("rack_no", { ascending: true });
-  //     }
-
-  //     const { data, error } = await query;
-
-  //     if (error) {
-  //       console.error("Supabase fetch error:", error);
-  //       alert("Failed to fetch data for export");
-  //       return;
-  //     }
-
-  //     if (!data || data.length === 0) {
-  //       alert("No data to export");
-  //       return;
-  //     }
-
-  //     // Map data to proper format for Excel
-  //     const mapped = data.map((item) => ({
-  //       "Device / Label": item.device_label,
-  //       Model: item.model,
-  //       Status: item.status,
-  //       "Rack No.": item.rack_no,
-  //       "New Rack No.": item.new_rack_no,
-  //       "Server Owner Dept.": item.server_owner_dept,
-  //       "Server Admin Name": item.server_admin_name,
-  //       "Serial Number": item.serial_number,
-  //       "UBA Tag Number": item.uba_tag_number,
-  //     }));
-
-  //     // Create workbook and sheet
-  //     const worksheet = XLSX.utils.json_to_sheet(mapped);
-  //     const workbook = XLSX.utils.book_new();
-  //     XLSX.utils.book_append_sheet(workbook, worksheet, "Inventory");
-
-  //     // Export file
-  //     const fileName = filterActive
-  //       ? "Active_Inventory.xlsx"
-  //       : "All_Inventory.xlsx";
-
-  //     XLSX.writeFile(workbook, fileName);
-  //   } catch (err) {
-  //     console.error(err);
-  //     alert("Failed to export Excel file");
-  //   }
-  // };
-  const fetchItems = async () => {
-    const { data, error } = await supabase
-      .from("dc_inventory")
-      .select("*")
-      .order("rack_no", { ascending: true });
-
-    if (error) {
-      console.error("SUPABASE ERROR:", error);
-    } else {
-      console.log("SUPABASE DATA:", data);
-      setItems(data);
-    }
-  };
-  useEffect(() => {
-    fetchItems();
-  }, []);
 
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this device?")) return;
 
-    const { error } = await supabase.from("dc_inventory").delete().eq("id", id);
+    const tableName = tableMap[activeTab]; // ✅ dynamic table
+
+    const { error } = await supabase.from(tableName).delete().eq("id", id);
 
     if (error) {
       console.error("DELETE ERROR:", error);
@@ -372,22 +515,17 @@ function Dc_Inventory() {
       return;
     }
 
-    // Remove deleted item from state
-    setItems(items.filter((item) => item.id !== id));
+    fetchData(); // ✅ refresh correctly
   };
   const handleEdit = (item) => {
-    setFormData({
-      device_label: item.device_label,
-      model: item.model,
-      status: item.status,
-      rack_no: item.rack_no,
-      new_rack_no: item.new_rack_no,
-      server_owner_dept: item.server_owner_dept,
-      server_admin_name: item.server_admin_name,
-      serial_number: item.serial_number,
-      uba_tag_number: item.uba_tag_number,
-      deployment_date: item.deployment_date,
+    const fields = formMap[activeTab];
+
+    const newFormData = {};
+    fields.forEach((key) => {
+      newFormData[key] = item[key] ?? "";
     });
+
+    setFormData(newFormData);
     setEditingId(item.id);
 
     formRef.current?.scrollIntoView({
@@ -398,36 +536,37 @@ function Dc_Inventory() {
 
   const handleCancelEdit = () => {
     setEditingId(null);
-
-    setFormData({
-      device_label: "",
-      model: "",
-      status: "Active",
-      rack_no: "",
-      new_rack_no: "",
-      server_owner_dept: "",
-      server_admin_name: "",
-      serial_number: "",
-      uba_tag_number: "",
-      deployment_date: "",
-    });
+    setFormData(resetFormByTab[activeTab]);
   };
   //Filter items based on search
-  const filteredItems = items
+  const filteredItems = tableData
     .filter((item) => {
       const query = search.toLowerCase().trim();
 
       if (!query) return true;
 
-      return (
-        (item.device_label || "").toLowerCase().includes(query) ||
-        (item.model || "").toLowerCase().includes(query) ||
-        (item.server_owner_dept || "").toLowerCase().includes(query) ||
-        (item.server_admin_name || "").toLowerCase().includes(query) ||
-        (item.serial_number || "").toLowerCase().includes(query) ||
-        (item.uba_tag_number || "").toLowerCase().includes(query) ||
-        (item.new_rack_no || "").toLowerCase().includes(query)
-      );
+      if (activeTab === "server") {
+        return (
+          (item.device_label || "").toLowerCase().includes(query) ||
+          (item.model || "").toLowerCase().includes(query) ||
+          (item.server_owner_dept || "").toLowerCase().includes(query) ||
+          (item.server_admin_name || "").toLowerCase().includes(query) ||
+          (item.serial_number || "").toLowerCase().includes(query) ||
+          (item.uba_tag_number || "").toLowerCase().includes(query)
+        );
+      }
+
+      if (activeTab === "power" || activeTab === "cooling") {
+        return (
+          (item.device_name || "").toLowerCase().includes(query) ||
+          (item.device_type || "").toLowerCase().includes(query) ||
+          (item.device_model || "").toLowerCase().includes(query) ||
+          (item.device_location || "").toLowerCase().includes(query) ||
+          (item.serial_number || "").toLowerCase().includes(query)
+        );
+      }
+
+      return true;
     })
     .sort((a, b) => {
       const rackA = parseInt(a.rack_no) || 0;
@@ -448,7 +587,7 @@ function Dc_Inventory() {
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = filteredItems.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
-  const formRef = useRef(null);
+
   useEffect(() => {
     setCurrentPage(1);
   }, [search]);
@@ -487,8 +626,31 @@ function Dc_Inventory() {
   };
   const paginationRange = getPaginationRange(currentPage, totalPages);
 
+  const fetchData = async () => {
+    const tableName = tableMap[activeTab];
+
+    const { data, error } = await supabase
+      .from(tableName)
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error(error);
+    } else {
+      setTableData(data);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, [activeTab]);
+
   return (
     <div className="wholeBody">
+      <AssetTypeToggle
+        value={activeTab}
+        onChange={(val) => setActiveTab(val)}
+      />
       <InventoryForm
         formData={formData}
         handleChange={handleChange}
@@ -496,6 +658,8 @@ function Dc_Inventory() {
         editingId={editingId}
         handleCancelEdit={handleCancelEdit}
         formRef={formRef}
+        activeTab={activeTab}
+        fetchData={fetchData}
       />
 
       <p className="inventoryList">Inventory List</p>
@@ -509,9 +673,7 @@ function Dc_Inventory() {
           alignItems: "center",
         }}
       >
-        <p className="totalItems">
-          Total Devices: {search ? filteredItems.length : items.length}
-        </p>
+        <p className="totalItems">Total Devices: {filteredItems.length}</p>
 
         <div
           style={{
@@ -563,7 +725,7 @@ function Dc_Inventory() {
                 <polyline points="7 10 12 15 17 10"></polyline>
                 <line x1="12" x2="12" y1="15" y2="3"></line>
               </svg>{" "}
-              Export
+              Export ({activeTab})
             </button>
             <div className="dropdown-content">
               <button onClick={() => exportData({ format: "excel" })}>
@@ -592,6 +754,8 @@ function Dc_Inventory() {
           currentItems={currentItems}
           handleEdit={handleEdit}
           handleDelete={handleDelete}
+          activeTab={activeTab}
+          data={tableData}
         />
         <Pagination
           currentPage={currentPage}
@@ -608,11 +772,13 @@ function Dc_Inventory() {
         handleExcelPreview={handleExcelPreview}
         handleConfirmUpload={handleConfirmUpload}
         handleClose={handleCloseBulkModal}
+        activeTab={activeTab}
       />
       <ExportModal
         show={showExportModal}
         onClose={() => setShowExportModal(false)}
         selectedColumns={selectedColumns}
+        activeTab={activeTab}
         setSelectedColumns={setSelectedColumns}
         onExport={(format) => {
           exportData({

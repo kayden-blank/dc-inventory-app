@@ -1,0 +1,10 @@
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto; /* ✅ enables left-right scroll */
+  overflow-y: auto; /* optional: vertical scroll */
+}
+
+.table-wrapper table {
+  min-width: 800px; /* 👈 adjust based on your columns */
+  border-collapse: collapse;
+}
