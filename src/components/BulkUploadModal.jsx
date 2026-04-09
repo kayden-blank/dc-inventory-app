@@ -1,5 +1,7 @@
 import "../css/BulkUploadModal.css";
-import { Upload, FileSpreadsheet } from "lucide-react";
+import { Upload, FileSpreadsheet, CircleCheck } from "lucide-react";
+import { CircleLoader } from "react-spinners";
+
 function BulkUploadModal({
   show,
   previewData,
@@ -79,23 +81,7 @@ function BulkUploadModal({
             <div className="readyToUpload">
               <p>{previewData.length} records ready to upload</p>
               <p>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="15"
-                  height="15"
-                  color="#01A63F"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  class="lucide lucide-circle-check w-4 h-4"
-                  data-fg-ccgn48="49.13:49.13256:/components/BulkUploadDialog.tsx:240:23:9333:36:e:CheckCircle2::::::CELI"
-                >
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <path d="m9 12 2 2 4-4"></path>
-                </svg>{" "}
+                <CircleCheck size={17} color="#01A63F" />{" "}
                 <span style={{ color: "#01A63F" }}>Ready to upload</span>
               </p>
             </div>

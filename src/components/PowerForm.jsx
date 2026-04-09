@@ -1,4 +1,5 @@
 import React from "react";
+import { BeatLoader } from "react-spinners";
 
 const PowerForm = ({
   formData,
@@ -7,13 +8,21 @@ const PowerForm = ({
   editingId,
   handleCancelEdit,
   formRef,
+  loading,
 }) => {
   return (
     <>
       <p className="addNew">
         {editingId ? "Edit Power Device" : "Add New Power Device"}
       </p>
-      <form ref={formRef} onSubmit={handleSubmit} className="inventory-form">
+      <form
+        ref={formRef}
+        onSubmit={(e) => {
+          e.preventDefault();
+          handleSubmit(formData);
+        }}
+        className="inventory-form"
+      >
         <div className="form-grid">
           <div className="form_content">
             <label>Device Name:</label>
@@ -108,7 +117,13 @@ const PowerForm = ({
 
         <div style={{ display: "flex", gap: "12px", marginTop: "16px" }}>
           <button type="submit" className="submit-btn">
-            {editingId ? "Update Device" : "Add Power Device"}
+            {loading ? (
+              <BeatLoader color="white" size={10} />
+            ) : editingId ? (
+              "Update Power Device"
+            ) : (
+              "Add Power Device"
+            )}
           </button>
 
           {editingId && (

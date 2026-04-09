@@ -1,4 +1,5 @@
 import React from "react";
+import { BeatLoader } from "react-spinners";
 
 const CoolingForm = ({
   formData,
@@ -7,13 +8,21 @@ const CoolingForm = ({
   editingId,
   handleCancelEdit,
   formRef,
+  loading,
 }) => {
   return (
     <>
       <p className="addNew">
         {editingId ? "Edit Cooling Device" : "Add New Cooling Device"}
       </p>
-      <form ref={formRef} onSubmit={handleSubmit} className="inventory-form">
+      <form
+        ref={formRef}
+        onSubmit={(e) => {
+          e.preventDefault();
+          handleSubmit(formData);
+        }}
+        className="inventory-form"
+      >
         <div className="form-grid">
           <div className="form_content">
             <label>Device Name:</label>
@@ -125,7 +134,13 @@ const CoolingForm = ({
 
         <div style={{ display: "flex", gap: "12px", marginTop: "16px" }}>
           <button type="submit" className="submit-btn">
-            {editingId ? "Update Cooling Device" : "Add Cooling Device"}
+            {loading ? (
+              <BeatLoader color="white" size={10} />
+            ) : editingId ? (
+              "Update Cooling Device"
+            ) : (
+              "Add Cooling Device"
+            )}
           </button>
 
           {editingId && (

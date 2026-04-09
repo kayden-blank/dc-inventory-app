@@ -1,4 +1,5 @@
 import React from "react";
+import { BeatLoader } from "react-spinners";
 
 const ServerForm = ({
   formData,
@@ -7,11 +8,19 @@ const ServerForm = ({
   editingId,
   handleCancelEdit,
   formRef,
+  loading,
 }) => {
   return (
     <>
       <p className="addNew">{editingId ? "Edit Server" : "Add New Server"}</p>
-      <form ref={formRef} onSubmit={handleSubmit} className="inventory-form">
+      <form
+        ref={formRef}
+        onSubmit={(e) => {
+          e.preventDefault();
+          handleSubmit(formData);
+        }}
+        className="inventory-form"
+      >
         <div className="form-grid">
           <div className="form_content">
             <label>Device / Label:</label>
@@ -123,7 +132,13 @@ const ServerForm = ({
 
         <div style={{ display: "flex", gap: "12px", marginTop: "16px" }}>
           <button type="submit" className="submit-btn">
-            {editingId ? "Update Server" : "Add Server"}
+            {loading ? (
+              <BeatLoader color="white" size={10} />
+            ) : editingId ? (
+              "Update Server"
+            ) : (
+              "Add Server"
+            )}
           </button>
 
           {editingId && (

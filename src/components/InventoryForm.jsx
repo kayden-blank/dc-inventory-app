@@ -11,6 +11,7 @@ function InventoryForm({
   handleCancelEdit,
   formRef,
   activeTab,
+  loading,
 }) {
   if (activeTab === "server") {
     return (
@@ -21,6 +22,7 @@ function InventoryForm({
         editingId={editingId}
         handleCancelEdit={handleCancelEdit}
         formRef={formRef}
+        loading={loading}
       />
     );
   }
@@ -34,6 +36,7 @@ function InventoryForm({
         editingId={editingId}
         handleCancelEdit={handleCancelEdit}
         formRef={formRef}
+        loading={loading}
       />
     );
   }
@@ -47,6 +50,7 @@ function InventoryForm({
         editingId={editingId}
         handleCancelEdit={handleCancelEdit}
         formRef={formRef}
+        loading={loading}
       />
     );
   }
