@@ -1,5 +1,5 @@
 import React from "react";
-import Dc_Inventory from "./Dc_Inventory.jsx";
+import Dc_Inventory from "./DcInventory.jsx";
 import Navigation from "./Navigation.jsx";
 
 const Home = () => {

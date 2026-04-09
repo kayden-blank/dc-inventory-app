@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from "react";
-import { supabase } from "./assets/Supabase";
-import "./css/Dc_Inventory.css";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { supabase } from "./lib/supabaseClient.jsx";
+import "./css/DcInventory.css";
 import * as XLSX from "xlsx";
 import InventoryTable from "./components/InventoryTable.jsx";
 import InventoryForm from "./components/InventoryForm.jsx";
@@ -9,6 +9,8 @@ import SearchBar from "./components/SearchBar.jsx";
 import Pagination from "./components/Pagination.jsx";
 import ExportModal from "./components/ExportModal.jsx";
 import AssetTypeToggle from "./components/AssetTypeToggle.jsx";
+import { EXPORT_COLUMNS, IMPORT_COLUMNS } from "./constants/columns.js";
+import { Upload, Download } from "lucide-react";
 
 function Dc_Inventory() {
   // console.log("SUPABASE CLIENT:", supabase);
@@ -123,45 +125,9 @@ function Dc_Inventory() {
     }
 
     // Define export column maps per tab
-    const exportColumnsMap = {
-      server: {
-        device_label: "Device / Label",
-        model: "Model",
-        status: "Status",
-        rack_no: "Rack No.",
-        new_rack_no: "New Rack No.",
-        server_owner_dept: "Server Owner Dept.",
-        server_admin_name: "Server Admin Name",
-        serial_number: "Serial Number",
-        uba_tag_number: "UBA Tag Number",
-        deployment_date: "Deployment Date",
-      },
-      power: {
-        device_name: "Device Name",
-        device_type: "Device Type",
-        device_model: "Device Model",
-        device_location: "Location",
-        operational_status: "Operational Status",
-        condition_status: "Condition Status",
-        serial_number: "Serial Number",
-        uba_tag: "UBA Tag",
-      },
-      cooling: {
-        device_name: "Device Name",
-        device_type: "Device Type",
-        device_model: "Model",
-        device_location: "Location",
-        year_procured: "Year Procured",
-        year_installed: "Year Installed",
-        status: "Status",
-        serial_number: "Serial Number",
-        uba_tag: "UBA Tag",
-        remarks: "Remarks",
-      },
-    };
 
     // Get the columns for the current tab
-    const columns = exportColumnsMap[activeTab];
+    const columns = EXPORT_COLUMNS[activeTab];
 
     // Map filteredItems dynamically
     const mapped = filteredItems.map((item) => {
@@ -181,52 +147,36 @@ function Dc_Inventory() {
 
   const handleExcelPreview = async (file) => {
     if (!file) return;
-    console.log("Selected file:", file);
+    // ✅ 1. Check file extension
+    if (!file.name.toLowerCase().endsWith(".xlsx")) {
+      alert("Only .xlsx files are accepted");
+      return;
+    }
+
+    // ✅ 2. Check MIME type (extra protection)
+    const validMimeTypes = [
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    ];
+
+    if (!validMimeTypes.includes(file.type)) {
+      alert("Invalid file type. Please upload a valid Excel file.");
+      return;
+    }
+
+    // ✅ 3. Check file size (5MB limit)
+    const MAX_SIZE = 5 * 1024 * 1024; // 5MB
+
+    if (file.size > MAX_SIZE) {
+      alert("File size exceeds 5MB limit");
+      return;
+    }
     try {
       const buffer = await file.arrayBuffer();
       const workbook = XLSX.read(buffer);
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       const rows = XLSX.utils.sheet_to_json(sheet);
-      const importMap = {
-        server: {
-          "Device / Label": "device_label",
-          Model: "model",
-          Status: "status",
-          "Rack No.": "rack_no",
-          "New Rack No.": "new_rack_no",
-          "Server Owner Department": "server_owner_dept",
-          "Admin Name": "server_admin_name",
-          "Serial Number": "serial_number",
-          "UBA Tag Number": "uba_tag_number",
-          "Deployment Date": "deployment_date",
-        },
 
-        power: {
-          "Device Name": "device_name",
-          "Device Type": "device_type",
-          "Device Model": "device_model",
-          Location: "device_location",
-          "Operational Status": "operational_status",
-          "Condition Status": "condition_status",
-          "Serial Number": "serial_number",
-          "UBA Tag": "uba_tag",
-        },
-
-        cooling: {
-          "Device Name": "device_name",
-          "Device Type": "device_type",
-          Model: "device_model",
-          Location: "device_location",
-          "Year Procured": "year_procured",
-          "Year Installed": "year_installed",
-          Status: "status",
-          "Serial Number": "serial_number",
-          "UBA Tag": "uba_tag",
-          Remarks: "remarks",
-        },
-      };
-
-      const mapping = importMap[activeTab];
+      const mapping = IMPORT_COLUMNS[activeTab];
 
       const mapped = rows.map((row, index) => {
         const obj = {};
@@ -362,87 +312,31 @@ function Dc_Inventory() {
   };
 
   const exportData = async ({
-    format = "excel", // "excel" | "pdf"
+    format = "excel",
     filterActive = false,
-    selectedColumns = null, // null = all columns
+    selectedColumns = null,
   }) => {
     try {
-      const tableName = tableMap[activeTab]; // ✅ dynamic table
+      let data;
 
-      let query = supabase.from(tableName).select("*");
+      // ✅ Use already available data
+      data = filterActive ? filteredItems : tableData;
 
-      // Optional filter (only if column exists)
-      if (filterActive && activeTab === "server") {
-        query = query
-          .eq("status", "Active")
-          .order("rack_no", { ascending: true });
-      }
-
-      const { data, error } = await query;
-
-      if (error) {
-        alert("Failed to fetch data");
-        return;
-      }
-
+      // ✅ Single check is enough
       if (!data || data.length === 0) {
         alert("No data to export");
         return;
       }
 
-      // ✅ Define ALL possible columns
-      const exportColumnsMap = {
-        server: {
-          device_label: "Device / Label",
-          model: "Model",
-          status: "Status",
-          rack_no: "Rack No.",
-          new_rack_no: "New Rack No.",
-          server_owner_dept: "Server Owner Dept.",
-          server_admin_name: "Server Admin Name",
-          serial_number: "Serial Number",
-          uba_tag_number: "UBA Tag Number",
-          deployment_date: "Deployment Date",
-        },
-
-        power: {
-          device_name: "Device Name",
-          device_type: "Device Type",
-          device_model: "Device Model",
-          device_location: "Location",
-          operational_status: "Operational Status",
-          condition_status: "Condition Status",
-          serial_number: "Serial Number",
-          uba_tag: "UBA Tag",
-        },
-
-        cooling: {
-          device_name: "Device Name",
-          device_type: "Device Type",
-          device_model: "Model",
-          device_location: "Location",
-          year_procured: "Year Procured",
-          year_installed: "Year Installed",
-          status: "Status",
-          serial_number: "Serial Number",
-          uba_tag: "UBA Tag",
-          remarks: "Remarks",
-        },
-      };
-
-      // Convert allColumns object into array of { key, label }
-      // Convert exportColumnsMap[activeTab] into array of { key, label }
-      const allColumnsArray = Object.entries(exportColumnsMap[activeTab]).map(
+      const allColumnsArray = Object.entries(EXPORT_COLUMNS[activeTab]).map(
         ([key, label]) => ({ key, label }),
       );
 
-      // Filter columns if selectedColumns is provided
       const columnsToUse =
         selectedColumns && selectedColumns.length > 0
           ? allColumnsArray.filter((col) => selectedColumns.includes(col.key))
           : allColumnsArray;
 
-      // ✅ Map data dynamically
       const mapped = data.map((item) => {
         const obj = {};
         columnsToUse.forEach((col) => {
@@ -451,9 +345,7 @@ function Dc_Inventory() {
         return obj;
       });
 
-      // =======================
-      // 📊 EXPORT EXCEL
-      // =======================
+      // 📊 Excel Export
       if (format === "excel") {
         const worksheet = XLSX.utils.json_to_sheet(mapped);
         const workbook = XLSX.utils.book_new();
@@ -462,16 +354,12 @@ function Dc_Inventory() {
         XLSX.writeFile(workbook, `${activeTab}_inventory.xlsx`);
       }
 
-      // =======================
-      // 📄 EXPORT PDF
-      // =======================
+      // 📄 PDF Export
       if (format === "pdf") {
         const jsPDF = (await import("jspdf")).default;
         const autoTable = (await import("jspdf-autotable")).default;
 
-        const doc = new jsPDF({
-          orientation: "landscape", // 👈 VERY IMPORTANT
-        });
+        const doc = new jsPDF({ orientation: "landscape" });
 
         const headers = [columnsToUse.map((col) => col.label)];
         const rows = mapped.map((row) => Object.values(row));
@@ -479,17 +367,15 @@ function Dc_Inventory() {
         autoTable(doc, {
           head: headers,
           body: rows,
-
           styles: {
-            fontSize: 8, // smaller text = more space
+            fontSize: 8,
             cellPadding: 3,
             overflow: "linebreak",
           },
           tableWidth: "auto",
           headStyles: {
-            fillColor: [217, 32, 41], // optional styling
+            fillColor: [217, 32, 41],
           },
-
           didDrawPage: (data) => {
             doc.setFontSize(10);
             doc.text("Inventory Export", data.settings.margin.left, 10);
@@ -541,48 +427,49 @@ function Dc_Inventory() {
     setFormData(resetFormByTab[activeTab]);
   };
   //Filter items based on search
-  const filteredItems = tableData
-    .filter((item) => {
-      const query = search.toLowerCase().trim();
+  const filteredItems = useMemo(() => {
+    const query = search.toLowerCase().trim();
+    return tableData
+      .filter((item) => {
+        if (!query) return true;
 
-      if (!query) return true;
+        if (activeTab === "server") {
+          return (
+            (item.device_label || "").toLowerCase().includes(query) ||
+            (item.model || "").toLowerCase().includes(query) ||
+            (item.server_owner_dept || "").toLowerCase().includes(query) ||
+            (item.server_admin_name || "").toLowerCase().includes(query) ||
+            (item.serial_number || "").toLowerCase().includes(query) ||
+            (item.uba_tag_number || "").toLowerCase().includes(query)
+          );
+        }
 
-      if (activeTab === "server") {
-        return (
-          (item.device_label || "").toLowerCase().includes(query) ||
-          (item.model || "").toLowerCase().includes(query) ||
-          (item.server_owner_dept || "").toLowerCase().includes(query) ||
-          (item.server_admin_name || "").toLowerCase().includes(query) ||
-          (item.serial_number || "").toLowerCase().includes(query) ||
-          (item.uba_tag_number || "").toLowerCase().includes(query)
-        );
-      }
+        if (activeTab === "power" || activeTab === "cooling") {
+          return (
+            (item.device_name || "").toLowerCase().includes(query) ||
+            (item.device_type || "").toLowerCase().includes(query) ||
+            (item.device_model || "").toLowerCase().includes(query) ||
+            (item.device_location || "").toLowerCase().includes(query) ||
+            (item.serial_number || "").toLowerCase().includes(query)
+          );
+        }
 
-      if (activeTab === "power" || activeTab === "cooling") {
-        return (
-          (item.device_name || "").toLowerCase().includes(query) ||
-          (item.device_type || "").toLowerCase().includes(query) ||
-          (item.device_model || "").toLowerCase().includes(query) ||
-          (item.device_location || "").toLowerCase().includes(query) ||
-          (item.serial_number || "").toLowerCase().includes(query)
-        );
-      }
+        return true;
+      })
+      .sort((a, b) => {
+        const rackA = parseInt(a.rack_no) || 0;
+        const rackB = parseInt(b.rack_no) || 0;
 
-      return true;
-    })
-    .sort((a, b) => {
-      const rackA = parseInt(a.rack_no) || 0;
-      const rackB = parseInt(b.rack_no) || 0;
+        if (rackA !== rackB) {
+          return rackA - rackB;
+        }
 
-      if (rackA !== rackB) {
-        return rackA - rackB;
-      }
+        const labelA = (a.device_label || "").toLowerCase();
+        const labelB = (b.device_label || "").toLowerCase();
 
-      const labelA = (a.device_label || "").toLowerCase();
-      const labelB = (b.device_label || "").toLowerCase();
-
-      return labelA.localeCompare(labelB);
-    });
+        return labelA.localeCompare(labelB);
+      });
+  }, [tableData, search, activeTab]);
   //Paginate filtered items
 
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -628,7 +515,7 @@ function Dc_Inventory() {
   };
   const paginationRange = getPaginationRange(currentPage, totalPages);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     const tableName = tableMap[activeTab];
 
     const { data, error } = await supabase
@@ -641,11 +528,11 @@ function Dc_Inventory() {
     } else {
       setTableData(data);
     }
-  };
+  }, [activeTab]); // ✅ include any other state used inside
 
   useEffect(() => {
     fetchData();
-  }, [activeTab]);
+  }, [fetchData]); // ✅ include fetchData
 
   return (
     <div className="wholeBody">
@@ -687,47 +574,13 @@ function Dc_Inventory() {
         >
           {/* Bulk Upload */}
           <button className="bulkBtn" onClick={() => setShowBulkModal(true)}>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="17"
-              height="17"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              class="lucide lucide-upload w-4 h-4"
-              data-fg-b7rw65="0.8:49.4582:/App.tsx:335:21:11992:30:e:Upload::::::4gZ"
-            >
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-              <polyline points="17 8 12 3 7 8"></polyline>
-              <line x1="12" x2="12" y1="3" y2="15"></line>
-            </svg>{" "}
-            Bulk Upload
+            <Upload size={17} /> Bulk Upload
           </button>
 
           {/* Export Dropdown */}
           <div className="dropdown">
             <button className="selectbtn">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="17"
-                height="17"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                class="lucide lucide-download w-4 h-4"
-                data-fg-rmj4="49.16:49.10853:/components/ExportMenu.tsx:211:13:6801:32:e:Download::::::yh6"
-              >
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                <polyline points="7 10 12 15 17 10"></polyline>
-                <line x1="12" x2="12" y1="15" y2="3"></line>
-              </svg>{" "}
-              Export ({activeTab})
+              <Download size={17} /> Export ({activeTab})
             </button>
             <div className="dropdown-content">
               <button onClick={() => exportData({ format: "excel" })}>
