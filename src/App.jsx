@@ -4,9 +4,9 @@ import ErrorBoundary from "./ErrorBoundary.jsx";
 
 function App() {
   return (
-    <ErrorBoundary>
-      <Home />
-    </ErrorBoundary>
+    // <ErrorBoundary>
+    <Home />
+    // {/* </ErrorBoundary> */}
   );
 }
 

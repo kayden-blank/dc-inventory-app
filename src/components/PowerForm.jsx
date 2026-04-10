@@ -19,7 +19,7 @@ const PowerForm = ({
         ref={formRef}
         onSubmit={(e) => {
           e.preventDefault();
-          handleSubmit(formData);
+          handleSubmit();
         }}
         className="inventory-form"
       >

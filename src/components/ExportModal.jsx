@@ -1,54 +1,16 @@
 import { useEffect } from "react";
+import { EXPORT_COLUMNS } from "../constants/columns";
 function ExportModal({
   show,
   onClose,
   onExport,
   selectedColumns,
   setSelectedColumns,
-  setExportFormat,
+
   activeTab,
 }) {
   if (!show) return null;
-
-  const columnsMap = {
-    server: [
-      { key: "device_label", label: "Device / Label" },
-      { key: "model", label: "Model" },
-      { key: "status", label: "Status" },
-      { key: "rack_no", label: "Rack No." },
-      { key: "new_rack_no", label: "New Rack No." },
-      { key: "server_owner_dept", label: "Server Owner Dept." },
-      { key: "server_admin_name", label: "Admin Name" },
-      { key: "serial_number", label: "Serial Number" },
-      { key: "uba_tag_number", label: "UBA Tag Number" },
-      { key: "deployment_date", label: "Deployment Date" },
-    ],
-
-    power: [
-      { key: "device_name", label: "Device Name" },
-      { key: "device_type", label: "Device Type" },
-      { key: "device_model", label: "Model" },
-      { key: "device_location", label: "Location" },
-      { key: "operational_status", label: "Operational Status" },
-      { key: "condition_status", label: "Condition Status" },
-      { key: "serial_number", label: "Serial Number" },
-      { key: "uba_tag", label: "UBA Tag" },
-    ],
-
-    cooling: [
-      { key: "device_name", label: "Device Name" },
-      { key: "device_type", label: "Device Type" },
-      { key: "device_model", label: "Model" },
-      { key: "device_location", label: "Location" },
-      { key: "year_procured", label: "Year Procured" },
-      { key: "year_installed", label: "Year Installed" },
-      { key: "status", label: "Status" },
-      { key: "serial_number", label: "Serial Number" },
-      { key: "uba_tag", label: "UBA Tag" },
-      { key: "remarks", label: "Remarks" },
-    ],
-  };
-  const columns = columnsMap[activeTab];
+  const columnEntries = Object.entries(EXPORT_COLUMNS[activeTab] || {});
 
   const toggleColumn = (key) => {
     setSelectedColumns((prev) =>
@@ -56,7 +18,7 @@ function ExportModal({
     );
   };
   const selectAll = () => {
-    setSelectedColumns(columns.map((col) => col.key));
+    setSelectedColumns(columnEntries.map(([key]) => key));
   };
 
   const clearAll = () => {
@@ -69,7 +31,7 @@ function ExportModal({
   };
   useEffect(() => {
     setSelectedColumns([]);
-  }, [activeTab]);
+  }, [activeTab, setSelectedColumns]);
   return (
     <div className="modal-overlay">
       <div className="modal">
@@ -90,19 +52,21 @@ function ExportModal({
           >
             <button
               onClick={selectAll}
-              disabled={selectedColumns.length === columns.length}
+              disabled={selectedColumns.length === columnEntries.length}
               style={{
                 padding: "8px 14px",
                 borderRadius: "6px",
                 border: "1px solid #D92029",
                 backgroundColor:
-                  selectedColumns.length === columns.length ? "#eee" : "#fff",
+                  selectedColumns.length === columnEntries.length
+                    ? "#eee"
+                    : "#fff",
                 color:
-                  selectedColumns.length === columns.length
+                  selectedColumns.length === columnEntries.length
                     ? "#999"
                     : "#D92029",
                 cursor:
-                  selectedColumns.length === columns.length
+                  selectedColumns.length === columnEntries.length
                     ? "not-allowed"
                     : "pointer",
                 fontWeight: "500",
@@ -131,7 +95,7 @@ function ExportModal({
             </button>
           </div>
           <p style={{ margin: 0 }}>
-            {selectedColumns.length} out of {columns.length} selected
+            {selectedColumns.length} out of {columnEntries.length} selected
           </p>
         </div>
         <hr></hr>
@@ -143,9 +107,9 @@ function ExportModal({
             marginTop: "30px",
           }}
         >
-          {columns.map((col) => (
+          {columnEntries.map(([key, label]) => (
             <label
-              key={col.key}
+              key={key}
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -162,10 +126,10 @@ function ExportModal({
                   border: "1px solid #E5E6EA",
                 }}
                 type="checkbox"
-                checked={selectedColumns.includes(col.key)}
-                onChange={() => toggleColumn(col.key)}
+                checked={selectedColumns.includes(key)}
+                onChange={() => toggleColumn(key)}
               />
-              {col.label}
+              {label}
             </label>
           ))}
         </div>

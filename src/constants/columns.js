@@ -36,6 +36,11 @@ export const EXPORT_COLUMNS = {
     remarks: "Remarks",
   },
 };
+export const TABLE_MAPS = {
+  server: "dc_inventory",
+  power: "power_devices",
+  cooling: "cooling_devices",
+};
 
 export const IMPORT_COLUMNS = {
   server: {

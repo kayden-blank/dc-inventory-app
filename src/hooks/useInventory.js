@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { TABLE_MAPS } from "../constants/columns.js";
 
 export const useInventory = (activeTab, formMap, resetFormByTab) => {
   const [tableData, setTableData] = useState([]);
@@ -8,13 +9,8 @@ export const useInventory = (activeTab, formMap, resetFormByTab) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const tableMap = {
-    server: "dc_inventory",
-    power: "power_devices",
-    cooling: "cooling_devices",
-  };
-  const tableName = tableMap[activeTab];
   const fetchData = useCallback(async () => {
+    const tableName = TABLE_MAPS[activeTab];
     try {
       setLoading(true);
       setError(null);
@@ -39,7 +35,13 @@ export const useInventory = (activeTab, formMap, resetFormByTab) => {
     fetchData();
   }, [fetchData]);
 
-  const handleSubmit = async (e) => {
+  useEffect(() => {
+    setFormData(resetFormByTab[activeTab]);
+    setEditingId(null);
+  }, [activeTab, resetFormByTab]);
+
+  const handleSubmit = async () => {
+    const tableName = TABLE_MAPS[activeTab];
     try {
       setLoading(true);
       setError(null);
@@ -73,6 +75,7 @@ export const useInventory = (activeTab, formMap, resetFormByTab) => {
   };
 
   const handleDelete = async (id) => {
+    const tableName = TABLE_MAPS[activeTab];
     if (!window.confirm("Are you sure?")) return;
 
     try {

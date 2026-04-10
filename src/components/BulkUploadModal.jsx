@@ -6,6 +6,7 @@ function BulkUploadModal({
   show,
   previewData,
   uploading,
+  validCount,
   handleExcelPreview,
   handleConfirmUpload,
   handleClose,
@@ -79,7 +80,10 @@ function BulkUploadModal({
         {previewData.length > 0 && (
           <>
             <div className="readyToUpload">
-              <p>{previewData.length} records ready to upload</p>
+              <p>
+                {validCount} records ready to upload out of {previewData.length}
+              </p>
+
               <p>
                 <CircleCheck size={17} color="#01A63F" />{" "}
                 <span style={{ color: "#01A63F" }}>Ready to upload</span>
@@ -133,7 +137,11 @@ function BulkUploadModal({
               color: "#fff",
             }}
           >
-            {uploading ? "Saving..." : `Upload ${previewData.length} Devices`}
+            {uploading ? (
+              <CircleLoader color="white" size={20} />
+            ) : (
+              `Upload ${validCount} Devices`
+            )}
           </button>
         </div>
       </div>

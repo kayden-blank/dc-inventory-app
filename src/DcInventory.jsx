@@ -1,8 +1,6 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 
-import { supabase } from "./lib/supabaseClient.jsx";
 import "./css/DcInventory.css";
-import * as XLSX from "xlsx";
 import InventoryTable from "./components/InventoryTable.jsx";
 import InventoryForm from "./components/InventoryForm.jsx";
 import BulkUploadModal from "./components/BulkUploadModal.jsx";
@@ -10,100 +8,129 @@ import SearchBar from "./components/SearchBar.jsx";
 import Pagination from "./components/Pagination.jsx";
 import ExportModal from "./components/ExportModal.jsx";
 import AssetTypeToggle from "./components/AssetTypeToggle.jsx";
-import { EXPORT_COLUMNS, IMPORT_COLUMNS } from "./constants/columns.js";
+import { EXPORT_COLUMNS } from "./constants/columns.js";
 import { Upload, Download } from "lucide-react";
 import { useInventory } from "./hooks/useInventory.js";
 import { useExport } from "./hooks/useExport.js";
 import { useBulkUpload } from "./hooks/useBulkUpload.js";
+import { TABLE_MAPS } from "./constants/columns.js";
 
-function Dc_Inventory() {
-  // console.log("SUPABASE CLIENT:", supabase);
+const FORM_MAP = {
+  server: [
+    "device_label",
+    "model",
+    "status",
+    "rack_no",
+    "new_rack_no",
+    "server_owner_dept",
+    "server_admin_name",
+    "serial_number",
+    "uba_tag_number",
+    "deployment_date",
+  ],
+  power: [
+    "device_name",
+    "device_type",
+    "device_model",
+    "device_location",
+    "operational_status",
+    "condition_status",
+    "serial_number",
+    "uba_tag",
+  ],
+  cooling: [
+    "device_name",
+    "device_type",
+    "device_model",
+    "device_location",
+    "year_procured",
+    "year_installed",
+    "status",
+    "serial_number",
+    "uba_tag",
+    "remarks",
+  ],
+};
 
+const RESET_FORM_BY_TAB = {
+  server: {
+    device_label: "",
+    model: "",
+    status: "Active",
+    rack_no: "",
+    new_rack_no: "",
+    server_owner_dept: "",
+    server_admin_name: "",
+    serial_number: "",
+    uba_tag_number: "",
+    deployment_date: null,
+  },
+  power: {
+    device_name: "",
+    device_type: "",
+    device_model: "",
+    device_location: "",
+    operational_status: "Operational",
+    condition_status: "",
+    serial_number: "",
+    uba_tag: "",
+  },
+  cooling: {
+    device_name: "",
+    device_type: "",
+    device_model: "",
+    device_location: "",
+    year_procured: "",
+    year_installed: "",
+    status: "",
+    serial_number: "",
+    uba_tag: "",
+    remarks: "",
+  },
+};
+const getPaginationRange = (currentPage, totalPages) => {
+  const delta = 2;
+  const range = [];
+  const rangeWithDots = [];
+
+  for (let i = 1; i <= totalPages; i++) {
+    if (
+      i === 1 ||
+      i === totalPages ||
+      (i >= currentPage - delta && i <= currentPage + delta)
+    ) {
+      range.push(i);
+    }
+  }
+
+  let lastPage;
+
+  for (let i of range) {
+    if (lastPage) {
+      if (i - lastPage === 2) {
+        rangeWithDots.push(lastPage + 1);
+      } else if (i - lastPage > 2) {
+        rangeWithDots.push("...");
+      }
+    }
+
+    rangeWithDots.push(i);
+    lastPage = i;
+  }
+
+  return rangeWithDots;
+};
+function DcInventory() {
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const [showBulkModal, setShowBulkModal] = useState(false);
-
   const [showExportModal, setShowExportModal] = useState(false);
   const [selectedColumns, setSelectedColumns] = useState([]);
   const [activeTab, setActiveTab] = useState("server"); // default
-  const tableMap = {
-    server: "dc_inventory",
-    power: "power_devices",
-    cooling: "cooling_devices",
-  };
-  const formMap = {
-    server: [
-      "device_label",
-      "model",
-      "status",
-      "rack_no",
-      "new_rack_no",
-      "server_owner_dept",
-      "server_admin_name",
-      "serial_number",
-      "uba_tag_number",
-      "deployment_date",
-    ],
-    power: [
-      "device_name",
-      "device_type",
-      "device_model",
-      "device_location",
-      "operational_status",
-      "condition_status",
-      "serial_number",
-      "uba_tag",
-    ],
-    cooling: [
-      "device_name",
-      "device_type",
-      "device_model",
-      "device_location",
-      "year_procured",
-      "year_installed",
-      "status",
-      "serial_number",
-      "uba_tag",
-      "remarks",
-    ],
-  };
-  const resetFormByTab = {
-    server: {
-      device_label: "",
-      model: "",
-      status: "Active",
-      rack_no: "",
-      new_rack_no: "",
-      server_owner_dept: "",
-      server_admin_name: "",
-      serial_number: "",
-      uba_tag_number: "",
-      deployment_date: null,
-    },
-    power: {
-      device_name: "",
-      device_type: "",
-      device_model: "",
-      device_location: "",
-      operational_status: "Operational",
-      condition_status: "",
-      serial_number: "",
-      uba_tag: "",
-    },
-    cooling: {
-      device_name: "",
-      device_type: "",
-      device_model: "",
-      device_location: "",
-      year_procured: "",
-      year_installed: "",
-      status: "",
-      serial_number: "",
-      uba_tag: "",
-      remarks: "",
-    },
-  };
+
+  const formMap = FORM_MAP;
+  const resetFormByTab = RESET_FORM_BY_TAB;
 
   const {
     tableData,
@@ -172,16 +199,13 @@ function Dc_Inventory() {
   const {
     previewData,
     uploading,
+    validCount,
     handleExcelPreview,
     handleConfirmUpload,
     resetBulkUpload,
-  } = useBulkUpload(activeTab, tableMap, fetchData);
-  const [validData, setValidData] = useState([]);
+  } = useBulkUpload(activeTab, fetchData);
+
   const formRef = useRef(null);
-
-  //would be nice to have a dynamic form that uses formMap to generate fields based on activeTab, but for now we'll keep them separate for simplicity
-
-  // console.log("Current formData:", formData);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -205,45 +229,12 @@ function Dc_Inventory() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [search]);
+  }, [activeTab]);
 
-  const getPaginationRange = (currentPage, totalPages) => {
-    const delta = 2; // how many pages to show around current
-    const range = [];
-    const rangeWithDots = [];
-
-    for (let i = 1; i <= totalPages; i++) {
-      if (
-        i === 1 ||
-        i === totalPages ||
-        (i >= currentPage - delta && i <= currentPage + delta)
-      ) {
-        range.push(i);
-      }
-    }
-
-    let lastPage;
-
-    for (let i of range) {
-      if (lastPage) {
-        if (i - lastPage === 2) {
-          rangeWithDots.push(lastPage + 1);
-        } else if (i - lastPage > 2) {
-          rangeWithDots.push("...");
-        }
-      }
-
-      rangeWithDots.push(i);
-      lastPage = i;
-    }
-
-    return rangeWithDots;
-  };
-  const paginationRange = getPaginationRange(currentPage, totalPages);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]); // ✅ include fetchData
+  const paginationRange = useMemo(
+    () => getPaginationRange(currentPage, totalPages),
+    [currentPage, totalPages],
+  );
 
   return (
     <div className="wholeBody">
@@ -260,7 +251,6 @@ function Dc_Inventory() {
         handleCancelEdit={handleCancelEdit}
         formRef={formRef}
         activeTab={activeTab}
-        fetchData={fetchData}
         loading={loading}
       />
 
@@ -337,11 +327,11 @@ function Dc_Inventory() {
         show={showBulkModal}
         previewData={previewData}
         uploading={uploading}
+        validCount={validCount}
         handleExcelPreview={handleExcelPreview}
         handleConfirmUpload={handleConfirmUpload}
         handleClose={handleCloseBulkModal}
         activeTab={activeTab}
-        loading={loading}
       />
       <ExportModal
         show={showExportModal}
@@ -361,4 +351,4 @@ function Dc_Inventory() {
   );
 }
 
-export default Dc_Inventory;
+export default DcInventory;

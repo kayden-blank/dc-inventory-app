@@ -1,13 +1,13 @@
 import { useState } from "react";
 import * as XLSX from "xlsx";
 import { supabase } from "../lib/supabaseClient";
-import { IMPORT_COLUMNS } from "../constants/columns";
+import { IMPORT_COLUMNS, TABLE_MAPS } from "../constants/columns";
 
-export const useBulkUpload = (activeTab, tableMap, fetchData) => {
+export const useBulkUpload = (activeTab, fetchData) => {
   const [previewData, setPreviewData] = useState([]);
   const [validData, setValidData] = useState([]);
   const [uploading, setUploading] = useState(false);
-
+  const validCount = validData.length;
   // =========================
   // 📥 PREVIEW EXCEL
   // =========================
@@ -105,7 +105,7 @@ export const useBulkUpload = (activeTab, tableMap, fetchData) => {
       return;
     }
 
-    const tableName = tableMap[activeTab];
+    const tableName = TABLE_MAPS[activeTab];
 
     try {
       setUploading(true);
@@ -149,5 +149,6 @@ export const useBulkUpload = (activeTab, tableMap, fetchData) => {
     handleExcelPreview,
     handleConfirmUpload,
     resetBulkUpload,
+    validCount,
   };
 };

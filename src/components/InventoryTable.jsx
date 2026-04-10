@@ -28,7 +28,8 @@ function InventoryTable({ currentItems, handleEdit, handleDelete, activeTab }) {
                 <th>Type</th>
                 <th>Model</th>
                 <th>Location</th>
-                <th>Status</th>
+                <th>Operational Status</th>
+                <th>Condition Status</th>
                 <th>Serial Number</th>
               </>
             )}
@@ -71,11 +72,13 @@ function InventoryTable({ currentItems, handleEdit, handleDelete, activeTab }) {
 
                 {activeTab === "power" && (
                   <>
+                    {console.log("Power Item:", item)} {/* Debugging log */}
                     <td>{item.device_name}</td>
                     <td>{item.device_type}</td>
                     <td>{item.device_model}</td>
                     <td>{item.device_location}</td>
-                    <td>{item.condition_status}</td>
+                    <td>{item.operational_status || "N/A"}</td>
+                    <td>{item.condition_status || "N/A"}</td>
                     <td>{item.serial_number}</td>
                   </>
                 )}
