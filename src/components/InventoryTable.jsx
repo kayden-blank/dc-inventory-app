@@ -28,7 +28,7 @@ function InventoryTable({ currentItems, handleEdit, handleDelete, activeTab }) {
                 <th>Type</th>
                 <th>Model</th>
                 <th>Location</th>
-                <th>Operational Status</th>
+
                 <th>Condition Status</th>
                 <th>Serial Number</th>
               </>
@@ -77,9 +77,8 @@ function InventoryTable({ currentItems, handleEdit, handleDelete, activeTab }) {
                     <td>{item.device_type}</td>
                     <td>{item.device_model}</td>
                     <td>{item.device_location}</td>
-                    <td>{item.operational_status || "N/A"}</td>
                     <td>{item.condition_status || "N/A"}</td>
-                    <td>{item.serial_number}</td>
+                    <td>{item.serial_number || "N/A"}</td>
                   </>
                 )}
 
@@ -89,10 +88,10 @@ function InventoryTable({ currentItems, handleEdit, handleDelete, activeTab }) {
                     <td>{item.device_type}</td>
                     <td>{item.device_model}</td>
                     <td>{item.device_location}</td>
-                    <td>{item.year_procured}</td>
-                    <td>{item.year_installed}</td>
-                    <td>{item.status}</td>
-                    <td>{item.serial_number}</td>
+                    <td>{item.year_procured || "N/A"}</td>
+                    <td>{item.year_installed || "N/A"}</td>
+                    <td>{item.status || "N/A"}</td>
+                    <td>{item.serial_number || "N/A"}</td>
                   </>
                 )}
                 <td>
